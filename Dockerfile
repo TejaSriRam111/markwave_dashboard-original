@@ -23,8 +23,11 @@ RUN rm -rf /usr/share/nginx/html/*
 # Copy built files from the build stage
 COPY --from=build /app/build /usr/share/nginx/html
 
+# Copy custom nginx config (listens on 8080 for Cloud Run)
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
 # Expose port used by Cloud Run
-EXPOSE 80
+EXPOSE 8080
 
 # Start Nginx
 CMD ["nginx", "-g", "daemon off;"]
