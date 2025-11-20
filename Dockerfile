@@ -1,7 +1,15 @@
-# Use an official Nginx image
+# Step 1: Build React app
+FROM node:18 AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+
+# Step 2: Serve with Nginx
 FROM nginx:alpine
 
-# Replace default nginx config to support React Router (SPA)
+# SPA routing support
 RUN printf "server {\n\
     listen 80;\n\
     root /usr/share/nginx/html;\n\
@@ -11,8 +19,7 @@ RUN printf "server {\n\
     }\n\
 }\n" > /etc/nginx/conf.d/default.conf
 
-# Copy React build files
-COPY ./build /usr/share/nginx/html
+# Copy build output from builder
+COPY --from=builder /app/build /usr/share/nginx/html
 
-# Start Nginx
 CMD ["nginx", "-g", "daemon off;"]
