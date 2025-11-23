@@ -21,9 +21,7 @@ function App() {
 
       <UserTabs />
 
-      <main className="container" style={{ padding: '2rem 1rem' }}>
-        {activeTab === 'users' ? <UsersTab /> : <ReferralsTab />}
-      </main>
+      {activeTab === 'users' ? <UsersTab /> : <ReferralsTab />}
     </div>
   );
 }

@@ -139,7 +139,6 @@ const UserTabs: React.FC = () => {
                 </tbody>
               </table>
             </div>
-            <button className="floating-create-icon" onClick={handleCreateClick}>+</button>
           </div>
         ) : activeTab === 'existing' ? (
           <div>
