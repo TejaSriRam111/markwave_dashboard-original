@@ -7,9 +7,11 @@ const UserTabs: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'nonVerified' | 'existing' | 'tree'>('nonVerified');
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
     mobile: '',
-    referral_type: '',
+    first_name: '',
+    last_name: '',
+    refered_by_mobile: '',
+    refered_by_name: '',
   });
   const [referralUsers, setReferralUsers] = useState([]);
   const [existingCustomers, setExistingCustomers] = useState([]);
@@ -63,8 +65,22 @@ const UserTabs: React.FC = () => {
       });
       console.log('User created:', response.data);
       setShowModal(false);
+      // Reset form data
+      setFormData({
+        mobile: '',
+        first_name: '',
+        last_name: '',
+        refered_by_mobile: '',
+        refered_by_name: '',
+      });
+      // Refresh the referral users list
+      if (activeTab === 'nonVerified') {
+        const refreshResponse = await axios.get('http://localhost:8000/users/referrals');
+        setReferralUsers(refreshResponse.data.users || []);
+      }
     } catch (error) {
       console.error('Error creating user:', error);
+      alert('Error creating user. Please try again.');
     }
   };
 
@@ -187,30 +203,58 @@ const UserTabs: React.FC = () => {
             <h3>Create New User</h3>
             <form onSubmit={handleSubmit}>
               <label>
-                Name:
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                />
-              </label>
-              <label>
                 Mobile:
                 <input
-                  type="text"
+                  type="tel"
                   name="mobile"
                   value={formData.mobile}
                   onChange={handleInputChange}
+                  required
+                  placeholder="Enter mobile number"
                 />
               </label>
               <label>
-                Referral Type:
+                First Name:
                 <input
                   type="text"
-                  name="referral_type"
-                  value={formData.referral_type}
+                  name="first_name"
+                  value={formData.first_name}
                   onChange={handleInputChange}
+                  required
+                  placeholder="Enter first name"
+                />
+              </label>
+              <label>
+                Last Name:
+                <input
+                  type="text"
+                  name="last_name"
+                  value={formData.last_name}
+                  onChange={handleInputChange}
+                  required
+                  placeholder="Enter last name"
+                />
+              </label>
+              <label>
+                Referred By Mobile:
+                <input
+                  type="tel"
+                  name="refered_by_mobile"
+                  value={formData.refered_by_mobile}
+                  onChange={handleInputChange}
+                  required
+                  placeholder="Enter referrer's mobile"
+                />
+              </label>
+              <label>
+                Referred By Name:
+                <input
+                  type="text"
+                  name="refered_by_name"
+                  value={formData.refered_by_name}
+                  onChange={handleInputChange}
+                  required
+                  placeholder="Enter referrer's name"
                 />
               </label>
               <button type="submit">Submit</button>
