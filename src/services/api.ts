@@ -9,8 +9,8 @@ const api = axios.create({
 export const userService = {
   getUsers: async (): Promise<User[]> => {
     try {
-      const response = await api.get<User[]>(API_ENDPOINTS.getUsers());
-      return response.data;
+      const response = await api.get<{status: string, statuscode: number, users: User[]}>(API_ENDPOINTS.getUsers());
+      return response.data.users;
     } catch (error) {
       console.error('Error fetching users:', error);
       throw error;
@@ -19,8 +19,8 @@ export const userService = {
 
   getReferrals: async (): Promise<User[]> => {
     try {
-      const response = await api.get<User[]>(API_ENDPOINTS.getReferrals());
-      return response.data;
+      const response = await api.get<{status: string, statuscode: number, users: User[]}>(API_ENDPOINTS.getReferrals());
+      return response.data.users;
     } catch (error) {
       console.error('Error fetching referrals:', error);
       throw error;

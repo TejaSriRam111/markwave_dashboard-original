@@ -40,7 +40,7 @@ The dashboard automatically detects the environment and connects to the appropri
 - Run: `python main.py`
 
 ### Cloud Run (Production)
-- Automatically connects to: `https://markwave-admin-dasboard-couipk45fa-ew.a.run.app`
+- Automatically connects to: `https://markwave-live-services-650581102834.asia-south1.run.app`
 
 ## API Endpoints Used
 

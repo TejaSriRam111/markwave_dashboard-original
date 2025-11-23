@@ -18,7 +18,7 @@ const UserTabs: React.FC = () => {
     const fetchReferralUsers = async () => {
       try {
         const response = await axios.get('http://localhost:8000/users/referrals');
-        setReferralUsers(response.data);
+        setReferralUsers(response.data.users || []);
       } catch (error) {
         setReferralUsers([]); // Clear users on error
       }
@@ -27,7 +27,7 @@ const UserTabs: React.FC = () => {
     const fetchExistingCustomers = async () => {
       try {
         const response = await axios.get('http://localhost:8000/users/customers');
-        setExistingCustomers(response.data);
+        setExistingCustomers(response.data.users || []);
       } catch (error) {
         setExistingCustomers([]); // Clear users on error
       }
