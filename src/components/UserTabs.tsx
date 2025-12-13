@@ -18,17 +18,17 @@ const ProductImageCarousel: React.FC<{ images: string[], breed: string, inStock:
 
   return (
     <div style={{ position: 'relative', height: '200px', overflow: 'hidden' }}>
-      <img 
-        src={images[currentImageIndex]} 
+      <img
+        src={images[currentImageIndex]}
         alt={`${breed} - Image ${currentImageIndex + 1}`}
-        style={{ 
-          width: '100%', 
-          height: '100%', 
+        style={{
+          width: '100%',
+          height: '100%',
           objectFit: 'cover',
           filter: inStock ? 'none' : 'grayscale(30%)'
         }}
       />
-      
+
       {/* Navigation arrows - only show if multiple images */}
       {images.length > 1 && (
         <>
@@ -78,7 +78,7 @@ const ProductImageCarousel: React.FC<{ images: string[], breed: string, inStock:
           </button>
         </>
       )}
-      
+
       {/* Image indicators - only show if multiple images */}
       {images.length > 1 && (
         <div style={{
@@ -105,7 +105,7 @@ const ProductImageCarousel: React.FC<{ images: string[], breed: string, inStock:
           ))}
         </div>
       )}
-      
+
       {/* Out of stock overlay */}
       {!inStock && (
         <div style={{
@@ -137,6 +137,7 @@ const UserTabs: React.FC = () => {
     last_name: '',
     refered_by_mobile: '',
     refered_by_name: '',
+    role: 'Investor',
   });
   const [editFormData, setEditFormData] = useState({
     mobile: '',
@@ -198,9 +199,51 @@ const UserTabs: React.FC = () => {
     setShowModal(false);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+  };
+
+  const fetchReferrerDetails = async (mobile: string, isEditMode: boolean = false) => {
+    if (!mobile || mobile.length < 10) return;
+
+    try {
+      const response = await axios.get(`http://localhost:8000/users/${mobile}`);
+      if (response.data && response.data.user) {
+        const user = response.data.user;
+        let fullName = '';
+
+        if (user.first_name || user.last_name) {
+          fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+        } else if (user.name) {
+          fullName = user.name;
+        }
+
+        if (isEditMode) {
+          setEditFormData(prev => ({
+            ...prev,
+            refered_by_name: fullName
+          }));
+        } else {
+          setFormData(prev => ({
+            ...prev,
+            refered_by_name: fullName
+          }));
+        }
+      }
+    } catch (error) {
+      console.log('Referrer not found or error fetching details');
+      // Optional: Clear the name field if user not found? 
+      // For now, let's keep the user input or allow manual entry if API fails.
+    }
+  };
+
+  const handleReferralMobileBlur = () => {
+    fetchReferrerDetails(formData.refered_by_mobile, false);
+  };
+
+  const handleEditReferralMobileBlur = () => {
+    fetchReferrerDetails(editFormData.refered_by_mobile, true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -212,17 +255,18 @@ const UserTabs: React.FC = () => {
         last_name: formData.last_name,
         refered_by_mobile: formData.refered_by_mobile,
         refered_by_name: formData.refered_by_name,
+        role: formData.role,
       });
-      
+
       console.log('User response:', response.data);
-      
+
       // Check if user already exists
       if (response.data.message === 'User already exists') {
         alert('User already exists with this mobile number.');
       } else {
         alert('User created successfully!');
       }
-      
+
       // Close modal and reset form
       setShowModal(false);
       setFormData({
@@ -231,8 +275,9 @@ const UserTabs: React.FC = () => {
         last_name: '',
         refered_by_mobile: '',
         refered_by_name: '',
+        role: 'Investor',
       });
-      
+
       // Refresh the referral users list
       if (activeTab === 'nonVerified') {
         const refreshResponse = await axios.get(API_ENDPOINTS.getReferrals());
@@ -270,10 +315,10 @@ const UserTabs: React.FC = () => {
         refered_by_mobile: editFormData.refered_by_mobile,
         refered_by_name: editFormData.refered_by_name,
       });
-      
+
       console.log('User updated:', response.data);
       alert('User updated successfully!');
-      
+
       // Close modal and reset form
       setShowEditModal(false);
       setEditingUser(null);
@@ -284,7 +329,7 @@ const UserTabs: React.FC = () => {
         refered_by_mobile: '',
         refered_by_name: '',
       });
-      
+
       // Refresh the referral users list
       const refreshResponse = await axios.get('http://localhost:8000/users/referrals');
       setReferralUsers(refreshResponse.data.users || []);
@@ -445,11 +490,11 @@ const UserTabs: React.FC = () => {
             {activeTab === 'products' && (
               <div style={{ padding: '1rem' }}>
                 <h2>Products</h2>
-                <div style={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
-                  gap: '1.5rem', 
-                  marginTop: '1rem' 
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                  gap: '1.5rem',
+                  marginTop: '1rem'
                 }}>
                   {products.length === 0 ? (
                     <div style={{ gridColumn: '1 / -1', textAlign: 'center', color: '#888', padding: '2rem' }}>
@@ -457,10 +502,10 @@ const UserTabs: React.FC = () => {
                     </div>
                   ) : (
                     products.map((product: any, index: number) => (
-                      <div key={product.id || index} style={{ 
-                        background: '#fff', 
-                        borderRadius: '12px', 
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)', 
+                      <div key={product.id || index} style={{
+                        background: '#fff',
+                        borderRadius: '12px',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                         overflow: 'hidden',
                         border: '1px solid #e5e7eb',
                         opacity: product.inStock ? 1 : 0.6,
@@ -468,31 +513,31 @@ const UserTabs: React.FC = () => {
                       }}>
                         {/* Product Image Carousel */}
                         {product.buffalo_images && product.buffalo_images.length > 0 && (
-                          <ProductImageCarousel 
-                            images={product.buffalo_images} 
+                          <ProductImageCarousel
+                            images={product.buffalo_images}
                             breed={product.breed}
                             inStock={product.inStock}
                           />
                         )}
-                        
+
                         {/* Product Details */}
                         <div style={{ padding: '1rem' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
                             <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '600', color: '#111' }}>
                               {product.breed}
                             </h3>
-                            <span style={{ 
-                              background: product.inStock ? '#10b981' : '#dc2626', 
-                              color: 'white', 
-                              padding: '2px 6px', 
-                              borderRadius: '4px', 
+                            <span style={{
+                              background: product.inStock ? '#10b981' : '#dc2626',
+                              color: 'white',
+                              padding: '2px 6px',
+                              borderRadius: '4px',
                               fontSize: '12px',
                               fontWeight: '500'
                             }}>
                               {product.inStock ? 'In Stock' : 'Out of Stock'}
                             </span>
                           </div>
-                          
+
                           <div style={{ marginBottom: '0.75rem' }}>
                             <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '4px' }}>
                               <strong>Age:</strong> {product.age} years
@@ -504,11 +549,11 @@ const UserTabs: React.FC = () => {
                               <strong>ID:</strong> {product.id}
                             </div>
                           </div>
-                          
-                          <p style={{ 
-                            fontSize: '0.875rem', 
-                            color: '#374151', 
-                            lineHeight: '1.4', 
+
+                          <p style={{
+                            fontSize: '0.875rem',
+                            color: '#374151',
+                            lineHeight: '1.4',
                             margin: '0 0 1rem 0',
                             display: '-webkit-box',
                             WebkitLineClamp: 3,
@@ -517,7 +562,7 @@ const UserTabs: React.FC = () => {
                           }}>
                             {product.description}
                           </p>
-                          
+
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div>
                               <div style={{ fontSize: '1.25rem', fontWeight: '700', color: '#111' }}>
@@ -571,7 +616,7 @@ const UserTabs: React.FC = () => {
       {showModal && (
         <div className="modal" onClick={handleCloseModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button 
+            <button
               onClick={handleCloseModal}
               style={{
                 position: 'absolute',
@@ -603,6 +648,27 @@ const UserTabs: React.FC = () => {
             </button>
             <h3>Add New Referral</h3>
             <form onSubmit={handleSubmit}>
+              <label>
+                Role:
+                <select
+                  name="role"
+                  value={formData.role}
+                  onChange={handleInputChange}
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '0.5rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '0.375rem',
+                    fontSize: '1rem'
+                  }}
+                >
+                  <option value="Investor">Investor</option>
+                  <option value="Admin">Admin</option>
+                  <option value="Supervisor">Supervisor</option>
+                  <option value="Employee">Employee</option>
+                </select>
+              </label>
               <label>
                 Mobile:
                 <input
@@ -637,24 +703,25 @@ const UserTabs: React.FC = () => {
                 />
               </label>
               <label>
-                Referred By(Mobile):
+                Referral(Mobile):
                 <input
                   type="tel"
                   name="refered_by_mobile"
                   value={formData.refered_by_mobile}
                   onChange={handleInputChange}
-                  required
+                  onBlur={handleReferralMobileBlur}
+                  required={formData.role === 'Investor'}
                   placeholder="Enter referrer's mobile"
                 />
               </label>
               <label>
-                Referred By(Name):
+                Referral(Name):
                 <input
                   type="text"
                   name="refered_by_name"
                   value={formData.refered_by_name}
                   onChange={handleInputChange}
-                  required
+                  required={formData.role === 'Investor'}
                   placeholder="Enter referrer's name"
                 />
               </label>
@@ -669,7 +736,7 @@ const UserTabs: React.FC = () => {
       {showEditModal && editingUser && (
         <div className="modal" onClick={handleCloseEditModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button 
+            <button
               onClick={handleCloseEditModal}
               style={{
                 position: 'absolute',
@@ -741,6 +808,7 @@ const UserTabs: React.FC = () => {
                   name="refered_by_mobile"
                   value={editFormData.refered_by_mobile}
                   onChange={handleEditInputChange}
+                  onBlur={handleEditReferralMobileBlur}
                   required
                   placeholder="Enter referrer's mobile"
                 />

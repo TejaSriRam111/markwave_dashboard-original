@@ -8,7 +8,7 @@ function App() {
       <header className="header">
         <div className="container">
           <div className="header-content">
-            <h1 className="title">Markwave Dashboard</h1>
+            <h1 className="title">Animalkart Dashboard</h1>
             <HealthStatus />
           </div>
         </div>
