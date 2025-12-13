@@ -1,21 +1,19 @@
 export const API_CONFIG = {
   getBaseUrl: () => {
     // Force production URL - Updated at 12:12 PM
-    const productionUrl = 'https://markwave-live-services-650581102834.asia-south1.run.app';
+    const productionUrl = 'https://markwave-live-services-couipk45fa-el.a.run.app';
+
+    // Determine if running on localhost
+    const isLocalhost = window.location.hostname === 'localhost' ||
+                        window.location.hostname === '127.0.0.1';
+
+    const baseUrl = isLocalhost ? 'http://localhost:8000' : productionUrl;
     
     // Debug logging
-    console.log('🔗 API Base URL:', productionUrl);
+    console.log('🔗 API Base URL:', baseUrl);
     console.log('🌐 Current hostname:', window.location.hostname);
     
-    return productionUrl;
-    
-    // TODO: Uncomment below for local development
-    // const isLocalhost = window.location.hostname === 'localhost' || 
-    //                    window.location.hostname === '127.0.0.1';
-    // if (isLocalhost) {
-    //   return 'http://localhost:8000';
-    // }
-    // return 'https://markwave-live-services-650581102834.asia-south1.run.app';
+    return baseUrl;
   }
 };
 
