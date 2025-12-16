@@ -19,4 +19,6 @@ export const API_ENDPOINTS = {
   getProducts: () => `${API_CONFIG.getBaseUrl()}/products`,
   health: () => `${API_CONFIG.getBaseUrl()}/health`,
   getPendingUnits: () => `${API_CONFIG.getBaseUrl()}/purchases/admin/units/pending`,
+  approveUnit: (unitId: string) => `${API_CONFIG.getBaseUrl()}/purchases/admin/units/${unitId}/approve`,
+  rejectUnit: (unitId: string) => `${API_CONFIG.getBaseUrl()}/purchases/admin/units/${unitId}/reject`,
 };

@@ -232,6 +232,71 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile }) => {
     }
   }, [activeTab]);
 
+  const fetchPendingUnits = async () => {
+    try {
+      setOrdersError(null);
+      const response = await axios.get(API_ENDPOINTS.getPendingUnits(), {
+        headers: {
+          'X-Admin-Mobile': adminMobile,
+        },
+      });
+      const units = response.data?.units || [];
+      setPendingUnits(units);
+    } catch (error: any) {
+      console.error('Error fetching pending units:', error);
+      const rawDetail = error?.response?.data?.detail;
+      let msg: string;
+      if (typeof rawDetail === 'string') {
+        msg = rawDetail;
+      } else if (Array.isArray(rawDetail)) {
+        const first = rawDetail[0];
+        if (first && typeof first === 'object' && 'msg' in first) {
+          msg = String(first.msg);
+        } else {
+          msg = 'Failed to load orders';
+        }
+      } else if (rawDetail && typeof rawDetail === 'object' && 'msg' in rawDetail) {
+        msg = String(rawDetail.msg);
+      } else {
+        msg = 'Failed to load orders';
+      }
+      setOrdersError(msg);
+      setPendingUnits([]);
+    }
+  };
+
+  const handleApprove = async (unitId: string) => {
+    if (!window.confirm('Are you sure you want to approve this order?')) return;
+    try {
+      await axios.post(API_ENDPOINTS.approveUnit(unitId), {}, {
+        headers: {
+          'X-Admin-Mobile': adminMobile,
+        }
+      });
+      alert('Order approved successfully!');
+      fetchPendingUnits();
+    } catch (error) {
+      console.error('Error approving order:', error);
+      alert('Failed to approve order.');
+    }
+  };
+
+  const handleReject = async (unitId: string) => {
+    if (!window.confirm('Are you sure you want to reject this order?')) return;
+    try {
+      await axios.post(API_ENDPOINTS.rejectUnit(unitId), {}, {
+        headers: {
+          'X-Admin-Mobile': adminMobile,
+        }
+      });
+      alert('Order rejected successfully!');
+      fetchPendingUnits();
+    } catch (error) {
+      console.error('Error rejecting order:', error);
+      alert('Failed to reject order.');
+    }
+  };
+
   const handleCreateClick = () => {
     setShowModal(true);
   };
@@ -440,12 +505,13 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile }) => {
                     <th>Lat</th>
                     <th>Lng</th>
                     <th>Status</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {pendingUnits.length === 0 ? (
                     <tr>
-                      <td colSpan={9} style={{ textAlign: 'center', color: '#888' }}>No pending orders</td>
+                      <td colSpan={10} style={{ textAlign: 'center', color: '#888' }}>No pending orders</td>
                     </tr>
                   ) : (
                     pendingUnits.map((entry: any, index: number) => {
@@ -461,7 +527,58 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile }) => {
                           <td>{tx.paymentType || '-'}</td>
                           <td>{unit.lat ?? '-'}</td>
                           <td>{unit.lng ?? '-'}</td>
-                          <td>{unit.paymentStatus || '-'}</td>
+                          <td>
+                            <span style={{
+                              padding: '4px 8px',
+                              borderRadius: '4px',
+                              fontSize: '12px',
+                              fontWeight: '500',
+                              backgroundColor: '#fef3c7',
+                              color: '#d97706'
+                            }}>
+                              {unit.paymentStatus || '-'}
+                            </span>
+                          </td>
+                          <td>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              <button
+                                onClick={() => handleApprove(unit.id)}
+                                style={{
+                                  padding: '6px 12px',
+                                  borderRadius: '6px',
+                                  border: 'none',
+                                  background: '#10b981',
+                                  color: 'white',
+                                  fontSize: '12px',
+                                  fontWeight: '600',
+                                  cursor: 'pointer',
+                                  transition: 'background 0.2s'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = '#059669'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = '#10b981'}
+                              >
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => handleReject(unit.id)}
+                                style={{
+                                  padding: '6px 12px',
+                                  borderRadius: '6px',
+                                  border: 'none',
+                                  background: '#ef4444',
+                                  color: 'white',
+                                  fontSize: '12px',
+                                  fontWeight: '600',
+                                  cursor: 'pointer',
+                                  transition: 'background 0.2s'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = '#dc2626'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = '#ef4444'}
+                              >
+                                Reject
+                              </button>
+                            </div>
+                          </td>
                         </tr>
                       );
                     })
