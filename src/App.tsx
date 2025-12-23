@@ -6,6 +6,9 @@ import Login from './components/Login';
 interface Session {
   mobile: string;
   role: string | null;
+  name?: string;
+  lastLoginTime?: string;
+  currentLoginTime?: string;
 }
 
 function App() {
@@ -23,8 +26,27 @@ function App() {
   }, []);
 
   const handleLogin = useCallback((s: Session) => {
-    window.localStorage.setItem('ak_dashboard_session', JSON.stringify(s));
-    setSession(s);
+    // Determine last login (from previous session or current if new)
+    const prevSessionStr = window.localStorage.getItem('ak_dashboard_session');
+    let lastLoginTime = new Date().toLocaleString();
+
+    if (prevSessionStr) {
+      try {
+        const prevSession = JSON.parse(prevSessionStr);
+        if (prevSession.currentLoginTime) {
+          lastLoginTime = prevSession.currentLoginTime;
+        }
+      } catch (e) { }
+    }
+
+    const newSession = {
+      ...s,
+      currentLoginTime: new Date().toLocaleString(),
+      lastLoginTime: lastLoginTime
+    };
+
+    window.localStorage.setItem('ak_dashboard_session', JSON.stringify(newSession));
+    setSession(newSession);
   }, []);
 
   const handleLogout = () => {
@@ -36,33 +58,17 @@ function App() {
 
   return (
     <div className="App">
-      <header className="header">
-        <div className="container">
-          <div className="header-content">
-            <h1 className="title">Animalkart Dashboard</h1>
+      <header className="header" style={{ position: 'relative', height: '64px' }}>
+        <div className="container" style={{ position: 'relative', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {/* Centered Title */}
+          <h1 className="title" style={{ margin: 0, position: 'absolute', left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap' }}>
+            Animalkart Dashboard
+          </h1>
+
+          {/* Right Section: Health Status */}
+          <div style={{ position: 'absolute', right: '1rem', display: 'flex', alignItems: 'center', gap: '1rem', height: '100%' }}>
             <HealthStatus />
           </div>
-          {session && (
-            <div style={{ marginTop: '0.5rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.9rem', color: '#374151' }}>
-                Logged in as {session.mobile} ({session.role || 'Unknown'})
-              </span>
-              <button
-                onClick={handleLogout}
-                style={{
-                  padding: '0.3rem 0.75rem',
-                  borderRadius: 4,
-                  border: '1px solid #9ca3af',
-                  background: 'transparent',
-                  color: '#374151',
-                  fontSize: '0.85rem',
-                  cursor: 'pointer',
-                }}
-              >
-                Logout
-              </button>
-            </div>
-          )}
         </div>
       </header>
 
@@ -78,7 +84,14 @@ function App() {
       )}
 
       {session && isAdmin && (
-        <UserTabs adminMobile={session.mobile} />
+        <UserTabs
+          adminMobile={session.mobile}
+          adminName={session.name || 'Admin User'}
+          adminRole={session.role || 'Admin'}
+          lastLogin={session.lastLoginTime || 'First Login'}
+          presentLogin={session.currentLoginTime || new Date().toLocaleString()}
+          onLogout={handleLogout}
+        />
       )}
     </div>
   );

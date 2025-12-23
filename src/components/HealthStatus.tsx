@@ -43,7 +43,7 @@ const HealthStatus: React.FC = () => {
         }}
       ></div>
       <span className={`health-status-text ${isHealthy ? 'health-online' : 'health-offline'}`}>
-        API {isHealthy ? 'Connected' : 'Offline'}
+         {isHealthy ? 'Online' : 'Offline'}
       </span>
     </div>
   );
