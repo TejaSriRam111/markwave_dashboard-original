@@ -1019,61 +1019,83 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
               <div className="orders-dashboard">
                 <h2>Live Orders </h2>
                 {/* Stats Widgets */}
-                <div className="stats-grid">
-                  <div style={{ background: 'white', borderRadius: '1rem', padding: '1.5rem', boxShadow: '0 20px 27px 0 rgba(0,0,0,0.05)', position: 'relative', overflow: 'hidden' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(6, 1fr)' }}>
+                  <div style={{ background: 'white', borderRadius: '1rem', padding: '1rem', boxShadow: '0 20px 27px 0 rgba(0,0,0,0.05)', position: 'relative', overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
-                        <p style={{ color: '#67748e', fontSize: '0.875rem', fontWeight: 600, margin: '0 0 4px 0' }}>Pending Orders</p>
-                        <h5 style={{ color: '#344767', fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>
-                          {pendingUnits.filter((u: any) => u.order?.paymentStatus === 'PENDING_PAYMENT' || u.order?.paymentStatus === 'PENDING_ADMIN_VERIFICATION').length}
-                        </h5>
+                        <p style={{ color: '#67748e', fontSize: '0.8rem', fontWeight: 600, margin: '0 0 2px 0' }}>Pending Orders</p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <h5 style={{ color: '#344767', fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>
+                            {pendingUnits.filter((u: any) => u.order?.paymentStatus === 'PENDING_PAYMENT' || u.order?.paymentStatus === 'PENDING_ADMIN_VERIFICATION').length}
+                          </h5>
+                          <span style={{ color: '#82d616', fontWeight: 700, fontSize: '0.75rem' }}>+15%</span>
+                        </div>
                       </div>
-                      <div style={{ width: '48px', height: '48px', background: 'linear-gradient(310deg, #2152ff 0%, #21d4fd 100%)', borderRadius: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
-                        <ShoppingBag size={24} />
-                      </div>
-                    </div>
-                    <div style={{ marginTop: '1rem' }}>
-                      <span style={{ color: '#82d616', fontWeight: 700, fontSize: '0.875rem' }}>+15%</span>
-                      <span style={{ color: '#67748e', fontSize: '0.875rem', marginLeft: '4px' }}>since last week</span>
                     </div>
                   </div>
 
-
-
-                  <div style={{ background: 'white', borderRadius: '1rem', padding: '1.5rem', boxShadow: '0 20px 27px 0 rgba(0,0,0,0.05)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <div style={{ background: 'white', borderRadius: '1rem', padding: '1rem', boxShadow: '0 20px 27px 0 rgba(0,0,0,0.05)' }}>
+                    <div style={{ display: 'flex' }}>
                       <div>
-                        <p style={{ color: '#67748e', fontSize: '0.875rem', fontWeight: 600, margin: '0 0 4px 0' }}>Approved Orders</p>
-                        <h5 style={{ color: '#344767', fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>
+                        <p style={{ color: '#67748e', fontSize: '0.8rem', fontWeight: 600, margin: '0 0 2px 0' }}>Approved Orders</p>
+                        <h5 style={{ color: '#344767', fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>
                           {pendingUnits.filter((u: any) => u.order?.paymentStatus === 'Approved' || u.order?.paymentStatus === 'PAID').length}
                         </h5>
                       </div>
-                      <div style={{ width: '48px', height: '48px', background: 'linear-gradient(310deg, #17ad37 0%, #98ec2d 100%)', borderRadius: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
-                        <CheckCircle size={24} />
+                    </div>
+                  </div>
+
+                  <div style={{ background: 'white', borderRadius: '1rem', padding: '1rem', boxShadow: '0 20px 27px 0 rgba(0,0,0,0.05)' }}>
+                    <div style={{ display: 'flex' }}>
+                      <div>
+                        <p style={{ color: '#67748e', fontSize: '0.8rem', fontWeight: 600, margin: '0 0 2px 0' }}>Rejected Orders</p>
+                        <h5 style={{ color: '#344767', fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>
+                          {pendingUnits.filter((u: any) => u.order?.paymentStatus === 'Rejected' || u.order?.paymentStatus === 'REJECTED').length}
+                        </h5>
                       </div>
                     </div>
                   </div>
 
-                  <div style={{ background: 'white', borderRadius: '1rem', padding: '1.5rem', boxShadow: '0 20px 27px 0 rgba(0,0,0,0.05)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <div style={{ background: 'white', borderRadius: '1rem', padding: '1rem', boxShadow: '0 20px 27px 0 rgba(0,0,0,0.05)' }}>
+                    <div style={{ display: 'flex' }}>
                       <div>
-                        <p style={{ color: '#67748e', fontSize: '0.875rem', fontWeight: 600, margin: '0 0 4px 0' }}>Rejected Orders</p>
-                        <h5 style={{ color: '#344767', fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>
-                          {pendingUnits.filter((u: any) => u.order?.paymentStatus === 'Rejected' || u.order?.paymentStatus === 'REJECTED').length}
+                        <p style={{ color: '#67748e', fontSize: '0.8rem', fontWeight: 600, margin: '0 0 2px 0' }}>Total Orders</p>
+                        <h5 style={{ color: '#344767', fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>
+                          {pendingUnits.length}
                         </h5>
                       </div>
-                      <div style={{ width: '48px', height: '48px', background: 'linear-gradient(310deg, #ea0606 0%, #ff667c 100%)', borderRadius: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
-                        <XCircle size={24} />
+                    </div>
+                  </div>
+
+                  <div style={{ background: 'white', borderRadius: '1rem', padding: '1rem', boxShadow: '0 20px 27px 0 rgba(0,0,0,0.05)' }}>
+                    <div style={{ display: 'flex' }}>
+                      <div>
+                        <p style={{ color: '#67748e', fontSize: '0.8rem', fontWeight: 600, margin: '0 0 2px 0' }}>Total Units</p>
+                        <h5 style={{ color: '#344767', fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>
+                          {pendingUnits.reduce((acc, curr) => acc + (curr.order?.numUnits || 0), 0)}
+                        </h5>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ background: 'white', borderRadius: '1rem', padding: '1rem', boxShadow: '0 20px 27px 0 rgba(0,0,0,0.05)' }}>
+                    <div style={{ display: 'flex' }}>
+                      <div>
+                        <p style={{ color: '#67748e', fontSize: '0.8rem', fontWeight: 600, margin: '0 0 2px 0' }}>Total Amount</p>
+                        <h5 style={{ color: '#344767', fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>
+                          ₹{pendingUnits.reduce((acc, curr) => acc + (Number(curr.transaction?.amount) || 0), 0).toLocaleString()}
+                        </h5>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="filter-controls">
+                <div className="filter-controls" style={{ padding: '0.5rem 0', display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
                   <input
                     type="text"
                     placeholder="Search By User Name,Unit Id,User Mobile,Buffalo Id"
                     className="search-input"
+                    style={{ width: '400px' }}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
