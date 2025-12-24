@@ -74,7 +74,7 @@ function App() {
       {session && isAdmin && (
         <UserTabs
           adminMobile={session.mobile}
-          adminName={session.name || 'Admin User'}
+          adminName={session.name || 'Admin'}
           adminRole={session.role || 'Admin'}
           lastLogin={session.lastLoginTime || 'First Login'}
           presentLogin={session.currentLoginTime || new Date().toLocaleString()}

@@ -456,7 +456,7 @@ const AdminDetailsModal: React.FC<{
         <div style={{ display: 'grid', gap: '0.75rem', background: '#f9fafb', padding: '1rem', borderRadius: '8px', fontSize: '0.875rem' }}>
           <div>
             <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '2px' }}>Role</div>
-            <div style={{ fontWeight: '600', color: '#374151' }}>{adminName}</div>
+            <div style={{ fontWeight: '600', color: '#374151' }}>{adminRole}</div>
           </div>
           <div>
             <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '2px' }}>Last Login</div>
@@ -522,8 +522,13 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
   const [pendingUnits, setPendingUnits] = useState<any[]>([]);
   const [ordersError, setOrdersError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+  const [activeUnitIndex, setActiveUnitIndex] = useState<number | null>(null);
+
+  // ID Proof Modal State
   const [paymentFilter, setPaymentFilter] = useState("All Payments");
   const [statusFilter, setStatusFilter] = useState("PENDING_ADMIN_VERIFICATION");
+  const [showFullDetails, setShowFullDetails] = useState(false);
 
 
 
@@ -953,7 +958,7 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
                 title={!isSidebarOpen ? "Referral" : ""}
               >
                 <Users />
-                <span className="nav-text">Referral</span>
+                <span className="nav-text">Referrals</span>
               </button>
             </li>
             <li>
@@ -963,7 +968,7 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
                 title={!isSidebarOpen ? "Verified Users" : ""}
               >
                 <UserCheck />
-                <span className="nav-text">Verified Users</span>
+                <span className="nav-text">Investors</span>
               </button>
             </li>
             <li>
@@ -1012,7 +1017,7 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
             {/* Content will be rendered here based on activeTab */}
             {activeTab === 'orders' && (
               <div className="orders-dashboard">
-                <h2>Live Orders (Pending Approval)</h2>
+                <h2>Live Orders </h2>
                 {/* Stats Widgets */}
                 <div className="stats-grid">
                   <div style={{ background: 'white', borderRadius: '1rem', padding: '1.5rem', boxShadow: '0 20px 27px 0 rgba(0,0,0,0.05)', position: 'relative', overflow: 'hidden' }}>
@@ -1074,7 +1079,7 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
                   />
 
                   <select
-                    className="filter-select"
+                    className="filter-select h-5"
                     value={paymentFilter}
                     onChange={(e) => setPaymentFilter(e.target.value)}
                   >
@@ -1085,7 +1090,7 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
                   </select>
 
                   <select
-                    className="filter-select"
+                    className="filter-select h-5"
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
                   >
@@ -1106,15 +1111,15 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
                     <thead>
                       <tr>
                         <th>S.No</th>
-                        <th>User Name</th>
-                        <th>Unit Id</th>
+                        <th style={{ minWidth: '150px' }}>User Name</th>
+                        <th>Status</th>
+                        <th >Units</th>
+                        <th>Order Id</th>
                         <th>User Mobile</th>
                         <th>Email</th>
-                        <th>Units</th>
                         <th>Amount</th>
                         <th>Payment Type</th>
-                        <th>Payment Image Proof</th>
-                        <th>Status</th>
+                        <th style={{ minWidth: '200px' }}>Payment Image Proof</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
@@ -1131,56 +1136,389 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
                           const tx = entry.transaction || {};
                           const inv = entry.investor || {};
                           return (
-                            <tr key={unit.id || index}>
-                              <td>{index + 1}</td>
-                              <td >{inv.name}</td>
-                              <td>{unit.id}</td>
-                              <td>{inv.mobile}</td>
-                              <td>{inv.email || '-'}</td>
-                              <td>{unit.numUnits}</td>
-                              <td>{tx.amount ?? '-'}</td>
-                              <td>{tx.paymentType || '-'}</td>
-                              <td >
-                                {unit.paymentType && (
+                            <React.Fragment key={unit.id || index}>
+                              <tr>
+                                <td>{index + 1}</td>
+                                <td >{inv.name}</td>
+                                <td>
+                                  <span className={`status-badge ${(unit.paymentStatus === 'PENDING_ADMIN_VERIFICATION' || unit.paymentStatus === 'PENDING_PAYMENT') ? 'pending' :
+                                    unit.paymentStatus === 'PAID' ? 'approved' :
+                                      unit.paymentStatus === 'REJECTED' ? 'rejected' : ''
+                                    }`}>
+                                    {unit.paymentStatus === 'PENDING_ADMIN_VERIFICATION' ? 'PENDING_ADMIN_VERIFICATION' :
+                                      unit.paymentStatus === 'PENDING_PAYMENT' ? 'PENDING_PAYMENT' :
+                                        unit.paymentStatus || '-'}
+                                  </span>
+                                </td>
+                                <td>{unit.numUnits}</td>
+                                <td>
                                   <button
-                                    className="view-proof-btn"
-                                    onClick={() => handleViewProof(tx, inv)}
+                                    onClick={() => {
+                                      const canExpand = ['PAID', 'Approved'].includes(unit.paymentStatus);
+                                      if (!canExpand) return;
+
+                                      if (expandedOrderId === unit.id) {
+                                        setExpandedOrderId(null);
+                                        setActiveUnitIndex(null);
+                                        setShowFullDetails(false);
+                                      } else {
+                                        setExpandedOrderId(unit.id);
+                                        setActiveUnitIndex(0);
+                                        setShowFullDetails(false);
+                                      }
+                                    }}
+                                    style={{
+                                      background: 'transparent',
+                                      border: 'none',
+                                      color: ['PAID', 'Approved'].includes(unit.paymentStatus) ? '#2563eb' : '#64748b',
+                                      fontWeight: '600',
+                                      cursor: ['PAID', 'Approved'].includes(unit.paymentStatus) ? 'pointer' : 'default',
+                                      padding: 0,
+                                      textDecoration: ['PAID', 'Approved'].includes(unit.paymentStatus) ? 'underline' : 'none'
+                                    }}
                                   >
-                                    Payment Proof
+                                    {unit.id}
                                   </button>
-                                ) || '-'}
-                              </td>
-                              <td>
-                                <span className={`status-badge ${(unit.paymentStatus === 'PENDING_ADMIN_VERIFICATION' || unit.paymentStatus === 'PENDING_PAYMENT') ? 'pending' :
-                                  unit.paymentStatus === 'Approved' ? 'approved' :
-                                    unit.paymentStatus === 'Rejected' ? 'rejected' : ''
-                                  }`}>
-                                  {unit.paymentStatus === 'PENDING_ADMIN_VERIFICATION' ? 'PENDING_ADMIN_VERIFICATION' :
-                                    unit.paymentStatus === 'PENDING_PAYMENT' ? 'PENDING_PAYMENT' :
-                                      unit.paymentStatus || '-'}
-                                </span>
-                              </td>
-                              <td>
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                  {unit.paymentStatus === 'PENDING_ADMIN_VERIFICATION' && (
+                                </td>
+                                
+                                <td>{inv.mobile}</td>
+                                <td>{inv.email || '-'}</td>
+                                <td>{tx.amount ?? '-'}</td>
+                                <td>{tx.paymentType || '-'}</td>
+                                <td >
+                                  {unit.paymentType && (
                                     <button
-                                      onClick={() => handleApproveClick(unit.id)}
-                                      className="action-btn approve"
+                                      className="view-proof-btn"
+                                      onClick={() => handleViewProof(tx, inv)}
                                     >
-                                      Approve
+                                      Payment Proof
                                     </button>
-                                  )}
-                                  {(unit.paymentStatus === 'PENDING_ADMIN_VERIFICATION' || unit.paymentStatus === 'PENDING_PAYMENT') && (
-                                    <button
-                                      onClick={() => handleReject(unit.id)}
-                                      className="action-btn reject"
-                                    >
-                                      Reject
-                                    </button>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
+                                  ) || '-'}
+                                </td>
+                                
+                                <td>
+                                  <div style={{ display: 'flex', gap: '8px' }}>
+                                    {unit.paymentStatus === 'PENDING_ADMIN_VERIFICATION' && (
+                                      <button
+                                        onClick={() => handleApproveClick(unit.id)}
+                                        className="action-btn approve"
+                                      >
+                                        Approve
+                                      </button>
+                                    )}
+                                    {(unit.paymentStatus === 'PENDING_ADMIN_VERIFICATION' ) && (
+                                      <button
+                                        onClick={() => handleReject(unit.id)}
+                                        className="action-btn reject"
+                                      >
+                                        Reject
+                                      </button>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                              {expandedOrderId === unit.id && ['PAID', 'Approved'].includes(unit.paymentStatus) && (
+                                <tr style={{ backgroundColor: '#f9fafb' }}>
+                                  <td colSpan={11} style={{ padding: '24px' }}>
+                                    <div className="order-expand-animation" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                                      {/* Unified Order Details Display */}
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                        {/* Unified Order Details Card */}
+                                        <div style={{
+                                          backgroundColor: '#fff',
+                                          borderRadius: '12px',
+                                          border: '1px solid #e5e7eb',
+                                          overflow: 'hidden'
+                                        }}>
+                                          {/* Header / Summary Bar */}
+                                          <div style={{
+                                            padding: '12px 20px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            gap: '20px',
+                                            borderBottom: showFullDetails ? '1px solid #f1f5f9' : 'none'
+                                          }}>
+                                            {/* Fields Grid */}
+                                            <div style={{
+                                              display: 'grid',
+                                              gridTemplateColumns: 'repeat(5, 1fr)',
+                                              gap: '20px',
+                                              flex: 1
+                                            }}>
+                                              {(() => {
+                                                const formatIndiaDateHeader = (val: any) => {
+                                                  if (!val || (typeof val !== 'string' && typeof val !== 'number')) return '-';
+                                                  const date = new Date(val);
+                                                  if (date instanceof Date && !isNaN(date.getTime()) && String(val).length > 10) {
+                                                    const day = String(date.getDate()).padStart(2, '0');
+                                                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                                                    const year = date.getFullYear();
+                                                    const hours = String(date.getHours()).padStart(2, '0');
+                                                    const minutes = String(date.getMinutes()).padStart(2, '0');
+                                                    const seconds = String(date.getSeconds()).padStart(2, '0');
+                                                    return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
+                                                  }
+                                                  return val;
+                                                };
+
+                                                return [
+                                                  { label: 'Payment Method', value: tx.paymentType || '-' },
+                                                  { label: 'Total Amount', value: `₹${tx.amount ?? '-'}` },
+                                                  { label: 'Approval Date', value: formatIndiaDateHeader(unit.updatedAt || unit.updated_at || unit.createdAt || unit.created_at || tx.updatedAt || tx.updated_at || tx.createdAt || tx.created_at || unit.paymentApprovedAt || tx.receipt_date || unit.date || tx.date || unit.approved_at || unit.approvedAt || tx.approved_at || tx.approvedAt || unit.order_date || tx.payment_date) },
+                                                  { label: 'Payment Mode', value: tx.paymentType || 'MANUAL_PAYMENT' },
+                                                  { label: 'Breed ID', value: unit.breedId || 'MURRAH-001' }
+                                                ].map((item, idx) => (
+                                                  <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                    <div style={{ fontSize: '10px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{item.label}</div>
+                                                    <div style={{ fontSize: '12px', fontWeight: '600', color: '#111827' }}>{item.value}</div>
+                                                  </div>
+                                                ));
+                                              })()}
+                                            </div>
+
+                                            {/* Smaller Chevron Toggle */}
+                                            <button
+                                              onClick={() => setShowFullDetails(!showFullDetails)}
+                                              style={{
+                                                cursor: 'pointer',
+                                                fontSize: '14px',
+                                                color: '#94a3b8',
+                                                background: 'none',
+                                                border: 'none',
+                                                padding: '4px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                transition: 'transform 0.2s ease',
+                                                transform: showFullDetails ? 'rotate(180deg)' : 'rotate(0deg)',
+                                                lineHeight: 1
+                                              }}
+                                            >
+                                              ∨
+                                            </button>
+                                          </div>
+
+                                          {/* Expanded Details Implementation (Same Card) */}
+                                          {showFullDetails && (
+                                            <div className="order-expand-animation" style={{
+                                              padding: '0 20px 20px 20px',
+                                              display: 'grid',
+                                              gridTemplateColumns: 'repeat(5, 1fr)',
+                                              gap: '20px'
+                                            }}>
+                                              {(() => {
+                                                const excludedKeys = ['id', 'name', 'mobile', 'email', 'amount', 'paymentType', 'paymentStatus', 'numUnits', 'order', 'transaction', 'investor', 'password', 'token', 'images', 'cpfUnitCost', 'unitCost', 'base_unit_cost', 'baseUnitCost', 'cpf_unit_cost', 'unit_cost', 'otp', 'first_name', 'last_name', 'otp_verified', 'otp_created_at', 'is_form_filled', 'occupation', 'updatedAt', 'updated_at', 'createdAt', 'created_at', 'breedId', 'breed_id', 'paymentApprovedAt', 'receipt_date', 'date', 'approved_at', 'approvedAt', 'order_date', 'payment_date'];
+                                                const combinedData = { ...unit, ...tx, ...inv };
+
+                                                // Indian Format Date Utility
+                                                const formatIndiaDate = (val: any) => {
+                                                  if (!val || (typeof val !== 'string' && typeof val !== 'number')) return String(val);
+                                                  const date = new Date(val);
+                                                  if (date instanceof Date && !isNaN(date.getTime()) && String(val).length > 10) {
+                                                    const day = String(date.getDate()).padStart(2, '0');
+                                                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                                                    const year = date.getFullYear();
+                                                    const hours = String(date.getHours()).padStart(2, '0');
+                                                    const minutes = String(date.getMinutes()).padStart(2, '0');
+                                                    const seconds = String(date.getSeconds()).padStart(2, '0');
+                                                    return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
+                                                  }
+                                                  return val;
+                                                };
+
+                                                return Object.entries(combinedData)
+                                                  .filter(([key, value]) => {
+                                                    const isExcluded = excludedKeys.includes(key);
+                                                    const lowerKey = key.toLowerCase();
+                                                    const isUrlKey = lowerKey.includes('url') || lowerKey.includes('link') || lowerKey.includes('proof') || lowerKey.includes('image');
+                                                    const isUrlValue = typeof value === 'string' && (value.startsWith('http') || value.startsWith('/api/'));
+                                                    return !isExcluded && !isUrlKey && !isUrlValue && value !== null && value !== undefined && typeof value !== 'object';
+                                                  })
+                                                  .map(([key, value], idx) => (
+                                                    <div key={`extra-${idx}`} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                      <div style={{ fontSize: '10px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                        {key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase())}
+                                                      </div>
+                                                      <div style={{ fontSize: '12px', fontWeight: '600', color: '#111827' }}>{formatIndiaDate(value)}</div>
+                                                    </div>
+                                                  ));
+                                              })()}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+
+                                      {/* Side-by-Side Unit Tracking Section */}
+                                      <div style={{ display: 'flex', gap: '24px', minHeight: '300px' }}>
+                                        {/* Left Side: Unit Selection */}
+                                        <div style={{ width: '240px', flexShrink: 0, borderRight: '1px solid #f1f5f9', paddingRight: '20px' }}>
+                                          <div style={{ fontWeight: '700', color: '#111827', fontSize: '14px', marginBottom: '16px' }}>Select Unit</div>
+                                          <div className="units-sidebar" style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '450px', overflowY: 'auto', paddingRight: '4px' }}>
+                                            {Array.from({ length: unit.numUnits || 0 }).map((_, i) => (
+                                              <button
+                                                key={i}
+                                                onClick={() => setActiveUnitIndex(activeUnitIndex === i ? null : i)}
+                                                style={{
+                                                  width: '100%',
+                                                  padding: '12px 16px',
+                                                  borderRadius: '10px',
+                                                  border: '1px solid',
+                                                  borderColor: activeUnitIndex === i ? '#2563eb' : '#e5e7eb',
+                                                  backgroundColor: activeUnitIndex === i ? '#eff6ff' : '#fff',
+                                                  color: activeUnitIndex === i ? '#2563eb' : '#4b5563',
+                                                  fontWeight: '600',
+                                                  fontSize: '13px',
+                                                  cursor: 'pointer',
+                                                  textAlign: 'left',
+                                                  display: 'flex',
+                                                  alignItems: 'center',
+                                                  justifyContent: 'space-between',
+                                                  transition: 'all 0.2s',
+                                                  boxShadow: activeUnitIndex === i ? '0 4px 6px -1px rgba(37, 99, 235, 0.1)' : 'none'
+                                                }}
+                                              >
+                                                <span>Unit {i + 1}</span>
+                                                <span style={{ fontSize: '10px', opacity: 0.7 }}>{unit.breedId || 'MURRAH-001'}</span>
+                                              </button>
+                                            ))}
+                                          </div>
+                                        </div>
+
+                                        {/* Right Side: Stepper Progress */}
+                                        <div style={{ flex: 1 }}>
+                                          {activeUnitIndex !== null ? (
+                                            <div className="order-expand-animation" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+                                              {[1, 2].map((buffaloNum) => (
+                                                <div key={buffaloNum} style={{ padding: '24px', backgroundColor: '#fff', borderRadius: '16px', border: '1px solid #f1f5f9', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+                                                  <div style={{ fontWeight: '700', color: '#111827', fontSize: '15px', marginBottom: '24px', borderBottom: '1px solid #f1f5f9', paddingBottom: '12px' }}>
+                                                    Buffalo {buffaloNum} Progress
+                                                  </div>
+
+                                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0', position: 'relative', paddingLeft: '8px' }}>
+                                                    {/* Placed */}
+                                                    <div
+                                                      style={{ display: 'flex', gap: '16px', position: 'relative', paddingBottom: '32px', cursor: 'help' }}
+                                                      title="SKU: BW-2024-001 | Qty: 2 units. Successfully recorded in central ledger."
+                                                    >
+                                                      <div style={{ position: 'absolute', left: '11px', top: '24px', bottom: '0', width: '2px', backgroundColor: '#10b981', zIndex: 1 }}></div>
+                                                      <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '12px', fontWeight: 'bold', zIndex: 2 }}>✓</div>
+                                                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                        <div style={{ fontSize: '14px', fontWeight: '700', color: '#10b981' }}>Order Placed</div>
+                                                        <div style={{ fontSize: '11px', color: '#64748b' }}>Recorded successfully</div>
+                                                        <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '4px' }}>24-05-2025 10:30:00</div>
+                                                      </div>
+                                                    </div>
+
+                                                    {/* Verification */}
+                                                    <div
+                                                      style={{ display: 'flex', gap: '16px', position: 'relative', paddingBottom: '32px', cursor: 'help' }}
+                                                      title="Proof Ref: PRF-8821 | Status: Verified by AI-Scan. Awaiting final human sign-off."
+                                                    >
+                                                      <div style={{
+                                                        position: 'absolute', left: '11px', top: '24px', bottom: '0', width: '2px',
+                                                        backgroundColor: ['Approved', 'PAID', 'Rejected', 'REJECTED'].includes(unit.paymentStatus) ? '#10b981' : '#e5e7eb',
+                                                        zIndex: 1
+                                                      }}></div>
+                                                      <div style={{
+                                                        width: '24px', height: '24px', borderRadius: '50%',
+                                                        backgroundColor: ['PENDING_ADMIN_VERIFICATION', 'Approved', 'PAID', 'Rejected', 'REJECTED'].includes(unit.paymentStatus) ? '#10b981' : '#fff',
+                                                        border: '2px solid' + (['PENDING_ADMIN_VERIFICATION', 'Approved', 'PAID', 'Rejected', 'REJECTED'].includes(unit.paymentStatus) ? '#10b981' : '#e5e7eb'),
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                        color: ['PENDING_ADMIN_VERIFICATION', 'Approved', 'PAID', 'Rejected', 'REJECTED'].includes(unit.paymentStatus) ? 'white' : '#9ca3af',
+                                                        fontSize: '12px', fontWeight: 'bold', zIndex: 2
+                                                      }}>
+                                                        {['Approved', 'PAID', 'Rejected', 'REJECTED'].includes(unit.paymentStatus) ? '✓' : '2'}
+                                                      </div>
+                                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                        <div style={{
+                                                          fontSize: '14px', fontWeight: '700',
+                                                          color: '#10b981'
+                                                        }}>Admin Verification</div>
+                                                        <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '4px' }}>24-05-2025 14:15:00</div>
+                                                      </div>
+                                                    </div>
+
+                                                    {/* Approved/Rejected */}
+                                                    <div
+                                                      style={{ display: 'flex', gap: '16px', position: 'relative', paddingBottom: '32px', cursor: 'help' }}
+                                                      title={['Rejected', 'REJECTED'].includes(unit.paymentStatus) ? "Review complete: Transaction has been rejected. Ref: FN-RJ-001" : "Txn ID: MN-102938475 | Method: Bank Transfer. Confirmed by clearing house."}
+                                                    >
+                                                      <div style={{
+                                                        position: 'absolute', left: '11px', top: '24px', bottom: '0', width: '2px',
+                                                        backgroundColor: ['Approved', 'PAID'].includes(unit.paymentStatus) ? '#10b981' : '#e5e7eb',
+                                                        zIndex: 1
+                                                      }}></div>
+                                                      <div style={{
+                                                        width: '24px', height: '24px', borderRadius: '50%',
+                                                        backgroundColor: ['Approved', 'PAID'].includes(unit.paymentStatus) ? '#10b981' : (['Rejected', 'REJECTED'].includes(unit.paymentStatus) ? '#ef4444' : '#fff'),
+                                                        border: '2px solid' + (['Approved', 'PAID'].includes(unit.paymentStatus) ? '#10b981' : (['Rejected', 'REJECTED'].includes(unit.paymentStatus) ? '#ef4444' : '#e5e7eb')),
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                        color: (['Approved', 'PAID', 'Rejected', 'REJECTED'].includes(unit.paymentStatus)) ? 'white' : '#9ca3af',
+                                                        fontSize: '12px', fontWeight: 'bold', zIndex: 2
+                                                      }}>
+                                                        {['Approved', 'PAID'].includes(unit.paymentStatus) ? '✓' : (['Rejected', 'REJECTED'].includes(unit.paymentStatus) ? '!' : '3')}
+                                                      </div>
+                                                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                        <div style={{
+                                                          fontSize: '14px', fontWeight: '700',
+                                                          color: ['Approved', 'PAID'].includes(unit.paymentStatus) ? '#10b981' : (['Rejected', 'REJECTED'].includes(unit.paymentStatus) ? '#ef4444' : '#9ca3af')
+                                                        }}>
+                                                          {['Rejected', 'REJECTED'].includes(unit.paymentStatus) ? 'Order Rejected' : 'Payment Approved'}
+                                                        </div>
+                                                        {['Approved', 'PAID', 'Rejected', 'REJECTED'].includes(unit.paymentStatus) && (
+                                                          <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '4px' }}>25-05-2025 09:45:00</div>
+                                                        )}
+                                                      </div>
+                                                    </div>
+
+                                                    {/* Delivered */}
+                                                    <div
+                                                      style={{ display: 'flex', gap: '16px', position: 'relative', cursor: 'help' }}
+                                                      title="Batch: WH-NORTH-04 | Logistics: North-Wing Fleet. Preparing for final assignment."
+                                                    >
+                                                      <div style={{
+                                                        width: '24px', height: '24px', borderRadius: '50%',
+                                                        backgroundColor: ['Approved', 'PAID'].includes(unit.paymentStatus) ? '#10b981' : '#fff',
+                                                        border: '2px solid' + (['Approved', 'PAID'].includes(unit.paymentStatus) ? '#10b981' : '#e5e7eb'),
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                        color: ['Approved', 'PAID'].includes(unit.paymentStatus) ? 'white' : '#9ca3af',
+                                                        fontSize: '12px', fontWeight: 'bold', zIndex: 2
+                                                      }}>
+                                                        {['Approved', 'PAID'].includes(unit.paymentStatus) ? '✓' : '4'}
+                                                      </div>
+                                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                        <div style={{
+                                                          fontSize: '14px', fontWeight: '700',
+                                                          color: ['Approved', 'PAID'].includes(unit.paymentStatus) ? '#10b981' : '#9ca3af'
+                                                        }}>Processed for Delivery</div>
+                                                        {['PAID', 'Approved'].includes(unit.paymentStatus) && (
+                                                          <button
+                                                            className="action-btn approve"
+                                                            style={{ padding: '4px 10px', fontSize: '11px', backgroundColor: '#0ea5e9', alignSelf: 'flex-start' }}
+                                                            disabled
+                                                          >
+                                                            Mark as Delivered
+                                                          </button>
+                                                        )}
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          ) : (
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#94a3b8', fontSize: '14px', fontStyle: 'italic' }}>
+                                              Select a unit from the left to view progress
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
+                            </React.Fragment>
                           );
                         })
                       )}
@@ -1188,7 +1526,6 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
                   </table>
                 </div>
               </div>
-
             )}
 
             {activeTab === 'nonVerified' && (
@@ -1277,161 +1614,158 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
               </div>
             )}
 
-            {
-              activeTab === 'existing' && (
-                <div>
-                  <h2>Verified Users</h2>
+            {activeTab === 'existing' && (
+              <div>
+                <h2>Investors</h2>
 
-                  <div className="table-container">
-                    <table className="user-table">
-                      <thead>
+                <div className="table-container">
+                  <table className="user-table">
+                    <thead>
+                      <tr>
+                        <th style={{ whiteSpace: 'nowrap', cursor: 'pointer', textAlign: 'center' }} onClick={() => requestExistingUsersSort('first_name')}>First Name {getSortIcon('first_name', existingUsersSortConfig)}</th>
+                        <th style={{ whiteSpace: 'nowrap', cursor: 'pointer', textAlign: 'center' }} onClick={() => requestExistingUsersSort('last_name')}>Last Name {getSortIcon('last_name', existingUsersSortConfig)}</th>
+                        <th style={{ whiteSpace: 'nowrap', cursor: 'pointer', textAlign: 'center' }} onClick={() => requestExistingUsersSort('mobile')}>Mobile {getSortIcon('mobile', existingUsersSortConfig)}</th>
+                        <th style={{ whiteSpace: 'nowrap', cursor: 'pointer', textAlign: 'center' }} onClick={() => requestExistingUsersSort('isFormFilled')}>Form Filled {getSortIcon('isFormFilled', existingUsersSortConfig)}</th>
+                        <th style={{ whiteSpace: 'nowrap', cursor: 'pointer', textAlign: 'center' }} onClick={() => requestExistingUsersSort('refered_by_name')}>Referred By {getSortIcon('refered_by_name', existingUsersSortConfig)}</th>
+                        <th style={{ whiteSpace: 'nowrap', cursor: 'pointer', textAlign: 'center' }} onClick={() => requestExistingUsersSort('refered_by_mobile')}>Referrer Mobile {getSortIcon('refered_by_mobile', existingUsersSortConfig)}</th>
+                        <th style={{ whiteSpace: 'nowrap', cursor: 'pointer', textAlign: 'center' }} onClick={() => requestExistingUsersSort('verified')}>Verified {getSortIcon('verified', existingUsersSortConfig)}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredExistingUsers.length === 0 ? (
                         <tr>
-                          <th style={{ whiteSpace: 'nowrap', cursor: 'pointer', textAlign: 'center' }} onClick={() => requestExistingUsersSort('first_name')}>First Name {getSortIcon('first_name', existingUsersSortConfig)}</th>
-                          <th style={{ whiteSpace: 'nowrap', cursor: 'pointer', textAlign: 'center' }} onClick={() => requestExistingUsersSort('last_name')}>Last Name {getSortIcon('last_name', existingUsersSortConfig)}</th>
-                          <th style={{ whiteSpace: 'nowrap', cursor: 'pointer', textAlign: 'center' }} onClick={() => requestExistingUsersSort('mobile')}>Mobile {getSortIcon('mobile', existingUsersSortConfig)}</th>
-                          <th style={{ whiteSpace: 'nowrap', cursor: 'pointer', textAlign: 'center' }} onClick={() => requestExistingUsersSort('isFormFilled')}>Form Filled {getSortIcon('isFormFilled', existingUsersSortConfig)}</th>
-                          <th style={{ whiteSpace: 'nowrap', cursor: 'pointer', textAlign: 'center' }} onClick={() => requestExistingUsersSort('refered_by_name')}>Referred By {getSortIcon('refered_by_name', existingUsersSortConfig)}</th>
-                          <th style={{ whiteSpace: 'nowrap', cursor: 'pointer', textAlign: 'center' }} onClick={() => requestExistingUsersSort('refered_by_mobile')}>Referrer Mobile {getSortIcon('refered_by_mobile', existingUsersSortConfig)}</th>
-                          <th style={{ whiteSpace: 'nowrap', cursor: 'pointer', textAlign: 'center' }} onClick={() => requestExistingUsersSort('verified')}>Verified {getSortIcon('verified', existingUsersSortConfig)}</th>
+                          <td colSpan={7} style={{ textAlign: 'center', color: '#888' }}>No users found</td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {filteredExistingUsers.length === 0 ? (
-                          <tr>
-                            <td colSpan={7} style={{ textAlign: 'center', color: '#888' }}>No users found</td>
+                      ) : (
+                        filteredExistingUsers.map((user: any, index: number) => (
+                          <tr key={index}>
+                            <td style={{ textAlign: 'center' }}>{user.first_name || '-'}</td>
+                            <td style={{ textAlign: 'center' }}>{user.last_name || '-'}</td>
+                            <td style={{ textAlign: 'center' }}>{user.mobile}</td>
+                            <td style={{ textAlign: 'center' }}>{user.isFormFilled ? 'Yes' : 'No'}</td>
+                            <td style={{ textAlign: 'center' }}>{user.refered_by_name || '-'}</td>
+                            <td style={{ textAlign: 'center' }}>{user.refered_by_mobile || '-'}</td>
+                            <td style={{ textAlign: 'center' }}>{user.verified ? 'Yes' : 'No'}</td>
                           </tr>
-                        ) : (
-                          filteredExistingUsers.map((user: any, index: number) => (
-                            <tr key={index}>
-                              <td style={{ textAlign: 'center' }}>{user.first_name || '-'}</td>
-                              <td style={{ textAlign: 'center' }}>{user.last_name || '-'}</td>
-                              <td style={{ textAlign: 'center' }}>{user.mobile}</td>
-                              <td style={{ textAlign: 'center' }}>{user.isFormFilled ? 'Yes' : 'No'}</td>
-                              <td style={{ textAlign: 'center' }}>{user.refered_by_name || '-'}</td>
-                              <td style={{ textAlign: 'center' }}>{user.refered_by_mobile || '-'}</td>
-                              <td style={{ textAlign: 'center' }}>{user.verified ? 'Yes' : 'No'}</td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
                 </div>
-              )}
+              </div>
+            )}
 
 
-            {
-              activeTab === 'tree' && (
-                <div>
-                  {/* Buffalo Tree tab content */}
-                  <div style={{ padding: '1rem' }}>
-                    <h2>Buffalo Family Tree</h2>
-                    <div className="tree-wrapper">
-                      {/* Render BuffaloTree component */}
-                      <div id="buffalo-tree-root">
-                        <BuffaloTree />
-                      </div>
+            {activeTab === 'tree' && (
+              <div>
+                {/* Buffalo Tree tab content */}
+                <div style={{ padding: '1rem' }}>
+                  <h2>Buffalo Family Tree</h2>
+                  <div className="tree-wrapper">
+                    {/* Render BuffaloTree component */}
+                    <div id="buffalo-tree-root">
+                      <BuffaloTree />
                     </div>
                   </div>
                 </div>
+              </div>
 
-              )
+            )
             }
 
-            {
-              activeTab === 'products' && (
-                <div style={{ padding: '1rem' }}>
-                  <h2>Products</h2>
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-                    gap: '1.5rem',
-                    marginTop: '1rem'
-                  }}>
-                    {products.length === 0 ? (
-                      <div style={{ gridColumn: '1 / -1', textAlign: 'center', color: '#888', padding: '2rem' }}>
-                        No products found
-                      </div>
-                    ) : (
-                      products.map((product: any, index: number) => (
-                        <div key={product.id || index} style={{
-                          background: '#fff',
-                          borderRadius: '12px',
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                          overflow: 'hidden',
-                          border: '1px solid #e5e7eb',
-                          opacity: product.inStock ? 1 : 0.6,
-                          filter: product.inStock ? 'none' : 'grayscale(50%)'
-                        }}>
-                          {/* Product Image Carousel */}
-                          {product.buffalo_images && product.buffalo_images.length > 0 && (
-                            <ProductImageCarousel
-                              images={product.buffalo_images}
-                              breed={product.breed}
-                              inStock={product.inStock}
-                            />
-                          )}
+            {activeTab === 'products' && (
+              <div style={{ padding: '1rem' }}>
+                <h2>Products</h2>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                  gap: '1.5rem',
+                  marginTop: '1rem'
+                }}>
+                  {products.length === 0 ? (
+                    <div style={{ gridColumn: '1 / -1', textAlign: 'center', color: '#888', padding: '2rem' }}>
+                      No products found
+                    </div>
+                  ) : (
+                    products.map((product: any, index: number) => (
+                      <div key={product.id || index} style={{
+                        background: '#fff',
+                        borderRadius: '12px',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                        overflow: 'hidden',
+                        border: '1px solid #e5e7eb',
+                        opacity: product.inStock ? 1 : 0.6,
+                        filter: product.inStock ? 'none' : 'grayscale(50%)'
+                      }}>
+                        {/* Product Image Carousel */}
+                        {product.buffalo_images && product.buffalo_images.length > 0 && (
+                          <ProductImageCarousel
+                            images={product.buffalo_images}
+                            breed={product.breed}
+                            inStock={product.inStock}
+                          />
+                        )}
 
-                          {/* Product Details */}
-                          <div style={{ padding: '1rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-                              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '600', color: '#111' }}>
-                                {product.breed}
-                              </h3>
-                              <span style={{
-                                background: product.inStock ? '#10b981' : '#dc2626',
-                                color: 'white',
-                                padding: '2px 6px',
-                                borderRadius: '4px',
-                                fontSize: '12px',
-                                fontWeight: '500'
-                              }}>
-                                {product.inStock ? 'In Stock' : 'Out of Stock'}
-                              </span>
-                            </div>
-
-                            <div style={{ marginBottom: '0.75rem' }}>
-                              <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '4px' }}>
-                                <strong>Age:</strong> {product.age} years
-                              </div>
-                              <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '4px' }}>
-                                <strong>Location:</strong> {product.location}
-                              </div>
-                              <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
-                                <strong>ID:</strong> {product.id}
-                              </div>
-                            </div>
-
-                            <p style={{
-                              fontSize: '0.875rem',
-                              color: '#374151',
-                              lineHeight: '1.4',
-                              margin: '0 0 1rem 0',
-                              display: '-webkit-box',
-                              WebkitLineClamp: 3,
-                              WebkitBoxOrient: 'vertical',
-                              overflow: 'hidden'
+                        {/* Product Details */}
+                        <div style={{ padding: '1rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '600', color: '#111' }}>
+                              {product.breed}
+                            </h3>
+                            <span style={{
+                              background: product.inStock ? '#10b981' : '#dc2626',
+                              color: 'white',
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              fontSize: '12px',
+                              fontWeight: '500'
                             }}>
-                              {product.description}
-                            </p>
+                              {product.inStock ? 'In Stock' : 'Out of Stock'}
+                            </span>
+                          </div>
 
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <div>
-                                <div style={{ fontSize: '1.25rem', fontWeight: '700', color: '#111' }}>
-                                  ₹{product.price?.toLocaleString()}
-                                </div>
-                                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
-                                  Insurance: ₹{product.insurance?.toLocaleString()}
-                                </div>
+                          <div style={{ marginBottom: '0.75rem' }}>
+                            <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '4px' }}>
+                              <strong>Age:</strong> {product.age} years
+                            </div>
+                            <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '4px' }}>
+                              <strong>Location:</strong> {product.location}
+                            </div>
+                            <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                              <strong>ID:</strong> {product.id}
+                            </div>
+                          </div>
+
+                          <p style={{
+                            fontSize: '0.875rem',
+                            color: '#374151',
+                            lineHeight: '1.4',
+                            margin: '0 0 1rem 0',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 3,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden'
+                          }}>
+                            {product.description}
+                          </p>
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <div style={{ fontSize: '1.25rem', fontWeight: '700', color: '#111' }}>
+                                ₹{product.price?.toLocaleString()}
+                              </div>
+                              <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                                Insurance: ₹{product.insurance?.toLocaleString()}
                               </div>
                             </div>
                           </div>
                         </div>
-                      ))
-                    )}
-                  </div>
+                      </div>
+                    ))
+                  )}
                 </div>
-              )
+              </div>
+            )
             }
           </div >
         </main >
