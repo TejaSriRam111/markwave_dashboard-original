@@ -64,6 +64,9 @@ const AdminDetailsModal: React.FC<AdminDetailsModalProps> = (props) => {
                         <div className="admin-detail-value">{presentLogin || 'N/A'}</div>
                     </div>
                 </div>
+                <div style={{ marginTop: '12px', textAlign: 'center' }}>
+                    <span style={{ fontSize: '12px', color: '#9ca3af' }}>v1.0.1</span>
+                </div>
             </div>
         </div>
     );

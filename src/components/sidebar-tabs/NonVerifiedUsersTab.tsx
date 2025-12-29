@@ -4,6 +4,7 @@ import type { RootState } from '../../store';
 import { useTableSortAndSearch } from '../../hooks/useTableSortAndSearch';
 import { setEditReferralModal } from '../../store/slices/uiSlice';
 import Pagination from '../common/Pagination';
+import Loader from '../common/Loader';
 import './NonVerifiedUsersTab.css';
 
 interface NonVerifiedUsersTabProps {
@@ -14,7 +15,7 @@ const NonVerifiedUsersTab: React.FC<NonVerifiedUsersTabProps> = ({
     getSortIcon
 }) => {
     const dispatch = useAppDispatch();
-    const referralUsers = useAppSelector((state: RootState) => state.users.referralUsers);
+    const { referralUsers, loading: usersLoading } = useAppSelector((state: RootState) => state.users);
 
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 15;
@@ -58,7 +59,13 @@ const NonVerifiedUsersTab: React.FC<NonVerifiedUsersTabProps> = ({
                         </tr>
                     </thead>
                     <tbody>
-                        {currentItems.length === 0 ? (
+                        {usersLoading ? (
+                            <tr>
+                                <td colSpan={8}>
+                                    <Loader />
+                                </td>
+                            </tr>
+                        ) : currentItems.length === 0 ? (
                             <tr>
                                 <td colSpan={8} className="non-verified-no-data">No users found</td>
                             </tr>

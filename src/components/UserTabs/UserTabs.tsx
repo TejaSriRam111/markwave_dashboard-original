@@ -60,6 +60,9 @@ interface UserTabsProps {
 const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, lastLogin, presentLogin, onLogout }) => {
   const dispatch = useAppDispatch();
 
+  // Local State for Admin Name (dynamic fetch)
+  const [displayAdminName, setDisplayAdminName] = useState(adminName);
+
   // UI State from Redux
   const { isSidebarOpen, activeTab } = useAppSelector((state: RootState) => state.ui);
   const { referral: showModal, editReferral: { isOpen: showEditModal, user: editingUser } } = useAppSelector((state: RootState) => state.ui.modals);
@@ -96,7 +99,36 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, [dispatch]);
+
+  // Fetch Admin Details to get latest name
+  useEffect(() => {
+    const fetchAdminDetails = async () => {
+      try {
+        const response = await axios.get(API_ENDPOINTS.getUserDetails(adminMobile));
+        if (response.data && response.data.user) {
+          const user = response.data.user;
+          let fullName = '';
+          if (user.first_name || user.last_name) {
+            fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+          } else if (user.name) {
+            fullName = user.name;
+          }
+          if (fullName) {
+            setDisplayAdminName(fullName);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch admin details:', error);
+      }
+    };
+
+    if (adminMobile) {
+      fetchAdminDetails();
+    }
+  }, [adminMobile]);
 
   const getSortIcon = (key: string, currentSortConfig: any) => {
     if (currentSortConfig.key !== key) return '';
@@ -428,10 +460,10 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
             className="admin-header-profile"
           >
             <div className="admin-name-container">
-              <span className="admin-name-text">{adminName}</span>
+              <span className="admin-name-text">{displayAdminName}</span>
             </div>
             <div className="avatar-circle admin-avatar-small">
-              {adminName ? adminName.substring(0, 2).toUpperCase() : 'AD'}
+              {displayAdminName ? displayAdminName.substring(0, 2).toUpperCase() : 'AD'}
             </div>
           </div>
         </div>
@@ -645,7 +677,7 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
       <ImageNamesModal />
 
       <AdminDetailsModal
-        adminName={adminName}
+        adminName={displayAdminName}
         adminMobile={adminMobile}
         adminRole={adminRole}
         lastLogin={lastLogin}

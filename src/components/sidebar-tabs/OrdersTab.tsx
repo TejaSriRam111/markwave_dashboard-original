@@ -15,6 +15,7 @@ import { API_ENDPOINTS } from '../../config/api';
 import './OrdersTab.css';
 import { setProofModal } from '../../store/slices/uiSlice';
 import Pagination from '../common/Pagination';
+import Loader from '../common/Loader';
 
 interface OrdersTabProps {
     handleApproveClick: (unitId: string) => void;
@@ -29,7 +30,7 @@ const OrdersTab: React.FC<OrdersTabProps> = ({
 
     // Redux State
     const pendingUnits = useAppSelector((state: RootState) => state.orders.pendingUnits);
-    const ordersError = useAppSelector((state: RootState) => state.orders.error);
+    const { error: ordersError, loading: ordersLoading } = useAppSelector((state: RootState) => state.orders);
     const { searchQuery, paymentFilter, statusFilter } = useAppSelector((state: RootState) => state.orders.filters);
     const { expandedOrderId, activeUnitIndex, showFullDetails } = useAppSelector((state: RootState) => state.orders.expansion);
     const trackingData = useAppSelector((state: RootState) => state.orders.trackingData);
@@ -281,7 +282,13 @@ const OrdersTab: React.FC<OrdersTabProps> = ({
                         </tr>
                     </thead>
                     <tbody>
-                        {currentItems.length === 0 ? (
+                        {ordersLoading ? (
+                            <tr>
+                                <td colSpan={11}>
+                                    <Loader />
+                                </td>
+                            </tr>
+                        ) : currentItems.length === 0 ? (
                             <tr>
                                 <td colSpan={11} className="no-data-row">
                                     {searchQuery ? 'No matching orders found' : 'No pending orders'}

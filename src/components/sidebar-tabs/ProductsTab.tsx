@@ -2,17 +2,22 @@ import React from 'react';
 import { useAppSelector } from '../../store/hooks';
 import type { RootState } from '../../store';
 import ProductImageCarousel from '../products/ProductImageCarousel';
+import Loader from '../common/Loader';
 import './ProductsTab.css';
 
 interface ProductsTabProps { }
 
 const ProductsTab: React.FC<ProductsTabProps> = () => {
-    const products = useAppSelector((state: RootState) => state.products.products);
+    const { products, loading: productsLoading } = useAppSelector((state: RootState) => state.products);
     return (
         <div className="products-tab-container">
             <h2>Products</h2>
             <div className="products-grid">
-                {products.length === 0 ? (
+                {productsLoading ? (
+                    <div style={{ gridColumn: '1 / -1' }}>
+                        <Loader />
+                    </div>
+                ) : products.length === 0 ? (
                     <div className="products-no-data">
                         No products found
                     </div>

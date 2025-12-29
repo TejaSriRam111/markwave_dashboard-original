@@ -3,6 +3,7 @@ import { useAppSelector } from '../../store/hooks';
 import type { RootState } from '../../store';
 import { useTableSortAndSearch } from '../../hooks/useTableSortAndSearch';
 import Pagination from '../common/Pagination';
+import Loader from '../common/Loader';
 import './ExistingCustomersTab.css';
 
 interface ExistingCustomersTabProps {
@@ -12,7 +13,7 @@ interface ExistingCustomersTabProps {
 const ExistingCustomersTab: React.FC<ExistingCustomersTabProps> = ({
     getSortIcon
 }) => {
-    const existingCustomers = useAppSelector((state: RootState) => state.users.existingCustomers);
+    const { existingCustomers, loading: usersLoading } = useAppSelector((state: RootState) => state.users);
 
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 15;
@@ -52,7 +53,13 @@ const ExistingCustomersTab: React.FC<ExistingCustomersTabProps> = ({
                         </tr>
                     </thead>
                     <tbody>
-                        {currentItems.length === 0 ? (
+                        {usersLoading ? (
+                            <tr>
+                                <td colSpan={8}>
+                                    <Loader />
+                                </td>
+                            </tr>
+                        ) : currentItems.length === 0 ? (
                             <tr>
                                 <td colSpan={8} className="existing-customers-no-data">No users found</td>
                             </tr>
