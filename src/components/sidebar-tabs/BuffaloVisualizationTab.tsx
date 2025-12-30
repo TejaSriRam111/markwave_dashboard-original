@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Loader from '../common/Loader';
+import BuffaloVizSkeleton from '../common/skeletons/BuffaloVizSkeleton';
 
 const BuffaloVisualizationTab: React.FC = () => {
     const [loading, setLoading] = useState(true);
@@ -16,9 +16,10 @@ const BuffaloVisualizationTab: React.FC = () => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    backgroundColor: '#f9fafb'
+                    backgroundColor: '#fff',
+                    zIndex: 10
                 }}>
-                    <Loader />
+                    <BuffaloVizSkeleton />
                 </div>
             )}
             <iframe

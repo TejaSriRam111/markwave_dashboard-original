@@ -5,6 +5,7 @@ import type { RootState } from '../../store';
 import { useTableSortAndSearch } from '../../hooks/useTableSortAndSearch';
 import Pagination from '../common/Pagination';
 import Loader from '../common/Loader';
+import TableSkeleton from '../common/TableSkeleton';
 import './ExistingCustomersTab.css';
 
 interface ExistingCustomersTabProps {
@@ -103,11 +104,7 @@ const ExistingCustomersTab: React.FC<ExistingCustomersTabProps> = ({
                     </thead>
                     <tbody>
                         {usersLoading ? (
-                            <tr>
-                                <td colSpan={8}>
-                                    <Loader />
-                                </td>
-                            </tr>
+                            <TableSkeleton cols={8} rows={10} />
                         ) : currentItems.length === 0 ? (
                             <tr>
                                 <td colSpan={8} className="existing-customers-no-data">No users found</td>

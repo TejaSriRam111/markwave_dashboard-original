@@ -14,6 +14,7 @@ import { setProofModal } from '../../store/slices/uiSlice';
 
 import Pagination from '../common/Pagination';
 import Loader from '../common/Loader';
+import TableSkeleton from '../common/TableSkeleton';
 
 const UTRCopyButton: React.FC<{ value: string }> = ({ value }) => {
     const [isCopied, setIsCopied] = useState(false);
@@ -339,11 +340,7 @@ const OrdersTab: React.FC<OrdersTabProps> = ({
                     </thead>
                     <tbody>
                         {ordersLoading ? (
-                            <tr>
-                                <td colSpan={11}>
-                                    <Loader />
-                                </td>
-                            </tr>
+                            <TableSkeleton cols={11} rows={10} />
                         ) : currentItems.length === 0 ? (
                             <tr>
                                 <td colSpan={11} className="no-data-row">

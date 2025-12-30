@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Loader from '../common/Loader';
+import EmiCalculatorSkeleton from '../common/skeletons/EmiCalculatorSkeleton';
 
 const EmiCalculatorTab: React.FC = () => {
     const [loading, setLoading] = useState(true);
@@ -16,9 +16,10 @@ const EmiCalculatorTab: React.FC = () => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    backgroundColor: '#f9fafb'
+                    backgroundColor: '#fff',
+                    zIndex: 10
                 }}>
-                    <Loader />
+                    <EmiCalculatorSkeleton />
                 </div>
             )}
             <iframe

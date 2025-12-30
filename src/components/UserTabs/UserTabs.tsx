@@ -35,6 +35,14 @@ import AdminDetailsModal from '../modals/AdminDetailsModal';
 import ReferralModal from '../modals/ReferralModal';
 import EditReferralModal from '../modals/EditReferralModal';
 import RejectionModal from '../modals/RejectionModal';
+import LogoutModal from '../modals/LogoutModal';
+import OrdersPageSkeleton from '../common/skeletons/OrdersPageSkeleton';
+import ProductsPageSkeleton from '../common/skeletons/ProductsPageSkeleton';
+import UsersPageSkeleton from '../common/skeletons/UsersPageSkeleton';
+import TrackingPageSkeleton from '../common/skeletons/TrackingPageSkeleton';
+import BuffaloVizSkeleton from '../common/skeletons/BuffaloVizSkeleton';
+import EmiCalculatorSkeleton from '../common/skeletons/EmiCalculatorSkeleton';
+import TablePageSkeleton from '../common/TablePageSkeleton';
 
 // Lazy Load Tabs
 const OrdersTab = React.lazy(() => import('../sidebar-tabs/OrdersTab'));
@@ -87,6 +95,8 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
     refered_by_mobile: '',
     refered_by_name: '',
   });
+
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -350,39 +360,65 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
   /* --- Tab Content Switch --- */
   const renderContentSwitch = () => {
     return (
-      <React.Suspense fallback={
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: '300px' }}>
-          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      }>
+      <>
         {(() => {
           switch (activeTab) {
             case 'orders':
               return (
-                <OrdersTab
-                  handleApproveClick={handleApproveClick}
-                  handleReject={handleReject}
-                />
+                <React.Suspense fallback={<OrdersPageSkeleton />}>
+                  <OrdersTab
+                    handleApproveClick={handleApproveClick}
+                    handleReject={handleReject}
+                  />
+                </React.Suspense>
               );
             case 'tracking':
-              return <TrackingTab />;
+              return (
+                <React.Suspense fallback={<TrackingPageSkeleton />}>
+                  <TrackingTab />
+                </React.Suspense>
+              );
             case 'nonVerified':
-              return <NonVerifiedUsersTab getSortIcon={getSortIcon} />;
+              return (
+                <React.Suspense fallback={<UsersPageSkeleton />}>
+                  <NonVerifiedUsersTab getSortIcon={getSortIcon} />
+                </React.Suspense>
+              );
             case 'existing':
-              return <ExistingCustomersTab getSortIcon={getSortIcon} />;
+              return (
+                <React.Suspense fallback={<UsersPageSkeleton />}>
+                  <ExistingCustomersTab getSortIcon={getSortIcon} />
+                </React.Suspense>
+              );
             // case 'tree':
             //   return <BuffaloTreeTab />;
             case 'products':
-              return <ProductsTab />;
+              return (
+                <React.Suspense fallback={<ProductsPageSkeleton />}>
+                  <ProductsTab />
+                </React.Suspense>
+              );
             case 'buffaloViz':
-              return <BuffaloVisualizationTab />;
+              return (
+                <React.Suspense fallback={<BuffaloVizSkeleton />}>
+                  <BuffaloVisualizationTab />
+                </React.Suspense>
+              );
             case 'emi':
-              return <EmiCalculatorTab />;
+              return (
+                <React.Suspense fallback={<EmiCalculatorSkeleton />}>
+                  <EmiCalculatorTab />
+                </React.Suspense>
+              );
             default:
-              return <OrdersTab handleApproveClick={handleApproveClick} handleReject={handleReject} />;
+              return (
+                <React.Suspense fallback={<OrdersPageSkeleton />}>
+                  <OrdersTab handleApproveClick={handleApproveClick} handleReject={handleReject} />
+                </React.Suspense>
+              );
           }
         })()}
-      </React.Suspense>
+      </>
     );
   };
 
@@ -617,7 +653,7 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
               className="nav-item logout"
               onClick={(e) => {
                 e.stopPropagation();
-                onLogout();
+                setIsLogoutModalOpen(true);
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -689,6 +725,12 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
       />
 
       <RejectionModal />
+
+      <LogoutModal
+        isOpen={isLogoutModalOpen}
+        onClose={() => setIsLogoutModalOpen(false)}
+        onConfirm={onLogout}
+      />
 
     </div >
   );

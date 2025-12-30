@@ -12,6 +12,7 @@ import {
 import { setProofModal } from '../../store/slices/uiSlice';
 import Pagination from '../common/Pagination';
 import Loader from '../common/Loader';
+import TableSkeleton from '../common/TableSkeleton';
 import './TrackingTab.css'; // Import external CSS
 
 const TrackingTab: React.FC = () => {
@@ -214,11 +215,7 @@ const TrackingTab: React.FC = () => {
                         </thead>
                         <tbody>
                             {ordersLoading ? (
-                                <tr>
-                                    <td colSpan={6}>
-                                        <Loader />
-                                    </td>
-                                </tr>
+                                <TableSkeleton cols={6} rows={10} />
                             ) : currentItems.length === 0 ? (
                                 <tr>
                                     <td colSpan={6} className="tracking-no-data-cell">

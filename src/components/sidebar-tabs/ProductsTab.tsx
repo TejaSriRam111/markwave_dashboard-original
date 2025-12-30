@@ -3,6 +3,7 @@ import { useAppSelector } from '../../store/hooks';
 import type { RootState } from '../../store';
 import ProductImageCarousel from '../products/ProductImageCarousel';
 import Loader from '../common/Loader';
+import ProductCardSkeleton from '../common/ProductCardSkeleton';
 import './ProductsTab.css';
 
 interface ProductsTabProps { }
@@ -14,9 +15,9 @@ const ProductsTab: React.FC<ProductsTabProps> = () => {
             <h2>Products</h2>
             <div className="products-grid">
                 {productsLoading ? (
-                    <div style={{ gridColumn: '1 / -1' }}>
-                        <Loader />
-                    </div>
+                    Array.from({ length: 8 }).map((_, i) => (
+                        <ProductCardSkeleton key={i} />
+                    ))
                 ) : products.length === 0 ? (
                     <div className="products-no-data">
                         No products found

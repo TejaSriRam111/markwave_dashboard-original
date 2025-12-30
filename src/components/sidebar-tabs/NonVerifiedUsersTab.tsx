@@ -6,6 +6,7 @@ import { useTableSortAndSearch } from '../../hooks/useTableSortAndSearch';
 import { setEditReferralModal } from '../../store/slices/uiSlice';
 import Pagination from '../common/Pagination';
 import Loader from '../common/Loader';
+import TableSkeleton from '../common/TableSkeleton';
 import './NonVerifiedUsersTab.css';
 
 interface NonVerifiedUsersTabProps {
@@ -98,11 +99,7 @@ const NonVerifiedUsersTab: React.FC<NonVerifiedUsersTabProps> = ({
                     </thead>
                     <tbody>
                         {usersLoading ? (
-                            <tr>
-                                <td colSpan={8}>
-                                    <Loader />
-                                </td>
-                            </tr>
+                            <TableSkeleton cols={8} rows={10} />
                         ) : currentItems.length === 0 ? (
                             <tr>
                                 <td colSpan={8} className="non-verified-no-data">No users found</td>
