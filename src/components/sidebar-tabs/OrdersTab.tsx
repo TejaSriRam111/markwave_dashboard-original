@@ -417,19 +417,7 @@ const OrdersTab: React.FC<OrdersTabProps> = ({
                                 <select
                                     value={paymentTypeFilter}
                                     onChange={(e) => handlePaymentTypeChange(e.target.value)}
-                                    style={{
-                                        width: '100%',
-                                        padding: '4px',
-                                        borderRadius: '4px',
-                                        border: '1px solid #cbd5e1',
-                                        fontSize: '11px',
-                                        fontWeight: 600,
-                                        color: '#475569',
-                                        cursor: 'pointer',
-                                        outline: 'none',
-                                        background: '#fff',
-                                        textAlign: 'center'
-                                    }}
+                                    className="payment-type-select"
                                     onClick={(e) => e.stopPropagation()}
                                 >
                                     <option value="All Payments">Payment Type</option>
@@ -683,23 +671,24 @@ const OrdersTab: React.FC<OrdersTabProps> = ({
                                                                                     : trackingStages;
 
                                                                                 return (
-                                                                                    <div key={buffaloNum} className="tracking-buffalo-card" style={{ marginBottom: '15px' }}>
+                                                                                    <div key={buffaloNum} className="tracking-buffalo-card">
                                                                                         <div className="tracking-buffalo-title">
                                                                                             <span>Cycle-{buffaloNum}</span>
-                                                                                            <button
-                                                                                                onClick={() => setExpandedTrackerKeys(prev => ({ ...prev, [trackerKey]: !isExpanded }))}
-                                                                                                className="tracking-individual-expand-btn"
-                                                                                                style={{ backgroundColor: 'white', border: 'none' }}
-                                                                                            >
-                                                                                                {isExpanded ? 'Minimize' : 'Expand'}
-                                                                                                <span className={`tracking-chevron ${isExpanded ? 'up' : 'down'}`}>
-                                                                                                    {isExpanded ? '▲' : '▼'}
-                                                                                                </span>
-                                                                                            </button>
+                                                                                            <div className="header-actions">
+                                                                                                <button
+                                                                                                    onClick={() => setExpandedTrackerKeys(prev => ({ ...prev, [trackerKey]: !isExpanded }))}
+                                                                                                    className="tracking-individual-expand-btn"
+                                                                                                >
+                                                                                                    {isExpanded ? 'Minimize' : 'Expand'}
+                                                                                                    <span className={`tracking-chevron ${isExpanded ? 'up' : 'down'}`}>
+                                                                                                        {isExpanded ? '▲' : '▼'}
+                                                                                                    </span>
+                                                                                                </button>
+                                                                                            </div>
                                                                                         </div>
 
                                                                                         {isExpanded && (
-                                                                                            <div className="tracking-timeline-container order-expand-animation" style={{ padding: '15px' }}>
+                                                                                            <div className="tracking-timeline-container order-expand-animation">
                                                                                                 {timelineStages.map((stage, sIdx) => {
                                                                                                     const isLast = sIdx === timelineStages.length - 1;
                                                                                                     const isStepCompleted = stage.id < currentStageId;

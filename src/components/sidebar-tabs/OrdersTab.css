@@ -28,13 +28,20 @@
     margin: 0;
 }
 
-
+.search-input {
+    height: 38px;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #334155;
+    outline: none;
+    transition: all 0.2s ease;
+}
 
 .search-input.orders-search {
     width: 200px;
-    padding: 6px 12px;
-    font-size: 0.9rem;
-    height: auto;
 }
 
 /* Status Cards Active States */
@@ -154,15 +161,16 @@
 .payment-type-select {
     background: #ffffff;
     color: #344767;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #cbd5e1;
     border-radius: 6px;
-    padding: 4px 8px;
+    padding: 4px;
     font-weight: 600;
     cursor: pointer;
     outline: none;
-    font-size: 0.85rem;
+    font-size: 11px;
     width: 135px;
     height: 35px;
+    text-align: center;
 }
 
 /* Payment Type Hover Details */
@@ -946,9 +954,35 @@
     color: #94a3b8;
 }
 
-.tracking-no-selection-placeholder {
-    height: 300px;
+/* --- CONSOLIDATED RESPONSIVENESS (Mobile, Tablet, PC, TV) --- */
+
+/* 1. Global Utility for Responsive Table */
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.user-table {
+    min-width: 1000px;
+    /* Ensures horizontal scroll works on small screens */
+}
+
+/* 2. Default Desktop Layout (1025px - 1920px) */
+.status-controls {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.header-actions {
     display: flex;
+    gap: 10px;
     align-items: center;
     justify-content: center;
     color: #94a3b8;
