@@ -5,19 +5,21 @@ import { API_ENDPOINTS } from '../../config/api';
 // Async Thunks
 export const fetchPendingUnits = createAsyncThunk(
     'orders/fetchPendingUnits',
-    async ({ adminMobile, page = 1, pageSize = 10, paymentStatus, paymentType, transferMode }: {
+    async ({ adminMobile, page = 1, pageSize = 10, paymentStatus, paymentType, transferMode, search }: {
         adminMobile: string;
         page?: number;
         pageSize?: number;
         paymentStatus?: string;
         paymentType?: string;
         transferMode?: string;
+        search?: string;
     }, { rejectWithValue }) => {
         try {
             const params: any = { page, page_size: pageSize };
             if (paymentStatus && paymentStatus !== 'All Status') params.paymentStatus = paymentStatus;
             if (paymentType && paymentType !== 'All Payments') params.paymentType = paymentType;
             if (transferMode && transferMode !== 'All Modes') params.transferMode = transferMode;
+            if (search) params.search = search;
 
             const response = await axios.get(API_ENDPOINTS.getPendingUnits(), {
                 headers: { 'X-Admin-Mobile': adminMobile },

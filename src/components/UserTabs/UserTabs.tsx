@@ -51,7 +51,7 @@ const NonVerifiedUsersTab = React.lazy(() => import('../sidebar-tabs/NonVerified
 const ExistingCustomersTab = React.lazy(() => import('../sidebar-tabs/ExistingCustomersTab'));
 const ProductsTab = React.lazy(() => import('../sidebar-tabs/ProductsTab'));
 // const BuffaloTreeTab = React.lazy(() => import('../sidebar-tabs/BuffaloTreeTab'));
-const TrackingTab = React.lazy(() => import('../sidebar-tabs/TrackingTab'));
+
 const BuffaloVisualizationTab = React.lazy(() => import('../sidebar-tabs/BuffaloVisualizationTab'));
 const EmiCalculatorTab = React.lazy(() => import('../sidebar-tabs/EmiCalculatorTab'));
 
@@ -85,8 +85,7 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
   // Determine active tab for Sidebar highlighting based on path
   const currentPath = location.pathname;
   let activeTab = 'orders';
-  if (currentPath.includes('/tracking')) activeTab = 'tracking';
-  else if (currentPath.includes('/referrals')) activeTab = 'nonVerified';
+  if (currentPath.includes('/referrals')) activeTab = 'nonVerified';
   else if (currentPath.includes('/investors')) activeTab = 'existing';
   else if (currentPath.includes('/products')) activeTab = 'products';
   else if (currentPath.includes('/buffalo-viz')) activeTab = 'buffaloViz';
@@ -154,9 +153,7 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
 
   // Fetch data based on active route
   useEffect(() => {
-    if (location.pathname.includes('/tracking')) {
-      dispatch(fetchPendingUnits({ adminMobile, paymentStatus: 'PAID', pageSize: 100 }));
-    } else if (location.pathname.includes('/referrals')) {
+    if (location.pathname.includes('/referrals')) {
       dispatch(fetchReferralUsers());
     } else if (location.pathname.includes('/investors')) {
       dispatch(fetchExistingCustomers());
@@ -461,21 +458,7 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
               </button>
             </li>
 
-            {/* Tracking */}
-            <li>
-              <button
-                className={`nav-item ${activeTab === 'tracking' ? 'active' : ''}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate('/dashboard/tracking');
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
-                  <MapPin size={18} />
-                  <span className="nav-text">Tracking</span>
-                </div>
-              </button>
-            </li>
+
 
             {/* Referrals */}
             <li>
@@ -603,11 +586,7 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
                 />
               </React.Suspense>
             } />
-            <Route path="tracking" element={
-              <React.Suspense fallback={<TrackingPageSkeleton />}>
-                <TrackingTab />
-              </React.Suspense>
-            } />
+
             <Route path="referrals" element={
               <React.Suspense fallback={<UsersPageSkeleton />}>
                 <NonVerifiedUsersTab getSortIcon={getSortIcon} />

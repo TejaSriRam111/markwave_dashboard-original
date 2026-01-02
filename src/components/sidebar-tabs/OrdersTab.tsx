@@ -115,11 +115,15 @@ const OrdersTab: React.FC<OrdersTabProps> = ({
         // Payment Type
         if (paymentParam && paymentParam !== paymentTypeFilter) {
             dispatch(setPaymentFilter(paymentParam));
+        } else if (!paymentParam && paymentTypeFilter !== 'All Payments') {
+            dispatch(setPaymentFilter('All Payments'));
         }
 
         // Transfer Mode
         if (modeParam && modeParam !== transferModeFilter) {
             dispatch(setTransferModeFilter(modeParam));
+        } else if (!modeParam && transferModeFilter !== 'All Modes') {
+            dispatch(setTransferModeFilter('All Modes'));
         }
 
     }, [searchParams, dispatch, page, statusFilter, paymentTypeFilter, transferModeFilter]);
@@ -159,9 +163,10 @@ const OrdersTab: React.FC<OrdersTabProps> = ({
             pageSize,
             paymentStatus: statusFilter,
             paymentType: paymentTypeFilter,
-            transferMode: transferModeFilter
+            transferMode: transferModeFilter,
+            search: searchQuery
         }));
-    }, [dispatch, adminMobile, page, pageSize, statusFilter, paymentTypeFilter, transferModeFilter]);
+    }, [dispatch, adminMobile, page, pageSize, statusFilter, paymentTypeFilter, transferModeFilter, searchQuery]);
 
     // Reset Page on Filter Change
     const prevFiltersRef = useRef({ statusFilter, paymentTypeFilter, transferModeFilter });
@@ -206,15 +211,7 @@ const OrdersTab: React.FC<OrdersTabProps> = ({
         });
     };
 
-    const handleTransferModeChange = (mode: string) => {
-        setSearchParams(prev => {
-            const newParams = new URLSearchParams(prev);
-            if (mode === 'All Modes') newParams.delete('mode');
-            else newParams.set('mode', mode);
-            newParams.set('page', '1');
-            return newParams;
-        });
-    };
+
 
 
     const handleViewProof = useCallback((transaction: any, investor: any) => {
@@ -311,15 +308,20 @@ const OrdersTab: React.FC<OrdersTabProps> = ({
         <div className="orders-dashboard">
             <div className="orders-header">
                 <h2>Live Orders</h2>
-                {/* Search hidden as it might not be fully supported by API yet in this mode */}
-                <input
-                    type="text"
-                    placeholder="Search by ID/Name..."
-                    className="search-input orders-search"
-                    style={{ visibility: 'hidden' }}
-                    value={localSearch}
-                    onChange={(e) => setLocalSearch(e.target.value)}
-                />
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <input
+                        type="date"
+                        className="search-input"
+                        style={{ maxWidth: '160px' }}
+                    />
+                    <input
+                        type="text"
+                        placeholder="Search by Order ID, Name, Mobile..."
+                        className="search-input orders-search"
+                        value={localSearch}
+                        onChange={(e) => setLocalSearch(e.target.value)}
+                    />
+                </div>
             </div>
 
             {/* Status Cards / Filters */}
@@ -407,7 +409,9 @@ const OrdersTab: React.FC<OrdersTabProps> = ({
                             <th>Units</th>
                             <th>Order Id</th>
                             <th>User Mobile</th>
+
                             <th>Email</th>
+                            <th>Ordered Date</th>
                             <th>Amount</th>
                             <th style={{ minWidth: '140px' }}>
                                 <select
@@ -506,6 +510,18 @@ const OrdersTab: React.FC<OrdersTabProps> = ({
                                             </td>
                                             <td>{inv.mobile}</td>
                                             <td>{inv.email || '-'}</td>
+                                            <td>
+                                                {unit.placedAt ? (
+                                                    <div style={{ display: 'flex', flexDirection: 'column', fontSize: '12px', fontWeight: 'bold' }}>
+                                                        <span >
+                                                            {new Date(unit.placedAt).toLocaleDateString('en-GB')}
+                                                        </span>
+                                                        <span style={{ color: '#64748b', fontSize: '11px' }}>
+                                                            {new Date(unit.placedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                                                        </span>
+                                                    </div>
+                                                ) : '-'}
+                                            </td>
                                             <td>{tx.amount ?? '-'}</td>
                                             <td className="payment-type-cell">
                                                 {tx.paymentType === 'BANK_TRANSFER' || tx.paymentType === 'CHEQUE' ? (
