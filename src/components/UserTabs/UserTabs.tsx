@@ -89,9 +89,9 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
   if (currentPath.includes('/referrals')) activeTab = 'nonVerified';
   else if (currentPath.includes('/investors')) activeTab = 'existing';
   else if (currentPath.includes('/products')) activeTab = 'products';
-  else if (currentPath.includes('/buffalo-viz')) activeTab = 'buffaloViz';
-  else if (currentPath.includes('/emi-calculator')) activeTab = 'emi';
-  else if (currentPath.includes('/acf-calculator')) activeTab = 'acf';
+  else if (currentPath.includes('/dashboard/visualizer')) activeTab = 'buffaloViz';
+  else if (currentPath.includes('/dashboard/emi')) activeTab = 'emi';
+  else if (currentPath.includes('/dashboard/acf')) activeTab = 'acf';
   else if (currentPath.includes('/orders')) activeTab = 'orders';
 
   const [formData, setFormData] = useState({
@@ -397,7 +397,7 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
           </button>
 
           <img
-            src="/header-logo-new.png"
+            src="/markwave_dashboard/header-logo-new.png"
             alt="Markwave Logo"
             className="header-logo"
             style={{ marginLeft: '0px', filter: 'brightness(0) invert(1)' }}
@@ -452,7 +452,7 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
               <X size={20} />
             </button>
             <img
-              src="/header-logo-new.png"
+              src="/markwave_dashboard/header-logo-new.png"
               alt="Markwave Logo"
               className="header-logo-sidebar"
               style={{ height: '28px', filter: 'brightness(0) invert(1)' }}
@@ -468,7 +468,7 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
                 className={`nav-item ${activeTab === 'orders' ? 'active' : ''}`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate('/dashboard/orders');
+                  navigate('/orders');
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
@@ -486,7 +486,7 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
                 className={`nav-item ${activeTab === 'nonVerified' ? 'active' : ''}`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate('/dashboard/referrals');
+                  navigate('/referrals');
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
@@ -502,7 +502,7 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
                 className={`nav-item ${activeTab === 'existing' ? 'active' : ''}`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate('/dashboard/investors');
+                  navigate('/investors');
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
@@ -536,7 +536,7 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
                 className={`nav-item ${activeTab === 'products' ? 'active-main' : ''}`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate('/dashboard/products');
+                  navigate('/products');
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
@@ -552,7 +552,7 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
                 className={`nav-item ${activeTab === 'buffaloViz' ? 'active-main' : ''}`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate('/dashboard/buffalo-viz');
+                  navigate('/dashboard/visualizer');
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
@@ -568,7 +568,7 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
                 className={`nav-item ${activeTab === 'emi' ? 'active-main' : ''}`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate('/dashboard/emi-calculator');
+                  navigate('/dashboard/emi');
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
@@ -584,7 +584,7 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
                 className={`nav-item ${activeTab === 'acf' ? 'active-main' : ''}`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate('/dashboard/acf-calculator');
+                  navigate('/dashboard/acf');
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
@@ -638,17 +638,17 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
                 <ProductsTab />
               </React.Suspense>
             } />
-            <Route path="buffalo-viz" element={
+            <Route path="/dashboard/visualizer" element={
               <React.Suspense fallback={<BuffaloVizSkeleton />}>
                 <BuffaloVisualizationTab />
               </React.Suspense>
             } />
-            <Route path="emi-calculator" element={
+            <Route path="/dashboard/emi" element={
               <React.Suspense fallback={<EmiCalculatorSkeleton />}>
                 <EmiCalculatorTab />
               </React.Suspense>
             } />
-            <Route path="acf-calculator" element={
+            <Route path="/dashboard/acf" element={
               <React.Suspense fallback={<EmiCalculatorSkeleton />}>
                 <AcfCalculatorTab />
               </React.Suspense>

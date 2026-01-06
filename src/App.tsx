@@ -86,7 +86,7 @@ function App() {
     }));
 
     // Navigate to origin
-    const from = (location.state as any)?.from?.pathname || '/dashboard/orders';
+    const from = (location.state as any)?.from?.pathname || '/orders';
     navigate(from, { replace: true });
   }, [dispatch, location.state, navigate]);
 
@@ -119,16 +119,16 @@ function App() {
     <div className="App">
       <Routes>
         <Route path="/login" element={
-          session ? <Navigate to="/dashboard/orders" replace /> : <Login onLogin={handleLogin} />
+          session ? <Navigate to="/orders" replace /> : <Login onLogin={handleLogin} />
         } />
 
         {/* Public Routes - No Login Required */}
-        <Route path="/buffalo-viz" element={PublicBuffaloViz} />
-        <Route path="/emi-calculator" element={PublicEmi} />
-        <Route path="/acf-calculator" element={PublicAcf} />
+        <Route path="/visualizer" element={PublicBuffaloViz} />
+        <Route path="/emi" element={PublicEmi} />
+        <Route path="/acf" element={PublicAcf} />
 
 
-        <Route path="/dashboard/*" element={
+        <Route path="/*" element={
           !session ? (
             <Navigate to="/login" replace state={{ from: location }} />
           ) : !isAdmin ? (
@@ -149,8 +149,8 @@ function App() {
           )
         } />
 
-        {/* Redirect root to dashboard */}
-        <Route path="*" element={<Navigate to="/dashboard/orders" replace />} />
+        {/* Redirect root to orders */}
+        <Route path="*" element={<Navigate to="/orders" replace />} />
       </Routes>
     </div>
   );
