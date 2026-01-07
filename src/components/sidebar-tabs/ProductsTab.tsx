@@ -1,6 +1,7 @@
-import React from 'react';
-import { useAppSelector } from '../../store/hooks';
+import React, { useState } from 'react';
+import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import type { RootState } from '../../store';
+import { deleteProduct, updateProduct, uploadProductImage } from '../../store/slices/productsSlice';
 import ProductImageCarousel from '../products/ProductImageCarousel';
 import Loader from '../common/Loader';
 import ProductCardSkeleton from '../common/ProductCardSkeleton';
@@ -140,6 +141,40 @@ const ProductsTab: React.FC<ProductsTabProps> = () => {
                                                     onClick={() => handleDeleteProduct(product.id)}
                                                 >
                                                     Delete
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="product-actions">
+                                        <button
+                                            className="action-btn menu-btn"
+                                            onClick={(e) => toggleMenu(product.id, e)}
+                                            title="More Options"
+                                        >
+                                            <MoreVertical size={18} />
+                                        </button>
+
+                                        {activeMenuId === product.id && (
+                                            <div className="action-menu-dropdown" onClick={(e) => e.stopPropagation()}>
+                                                <button
+                                                    className="menu-item"
+                                                    onClick={() => {
+                                                        handleEditClick(product);
+                                                        setActiveMenuId(null);
+                                                    }}
+                                                >
+                                                    <Edit size={16} />
+                                                    <span>Edit</span>
+                                                </button>
+                                                <button
+                                                    className="menu-item delete-item"
+                                                    onClick={() => {
+                                                        handleDelete(product.id);
+                                                        setActiveMenuId(null);
+                                                    }}
+                                                >
+                                                    <Trash2 size={16} />
+                                                    <span>Delete</span>
                                                 </button>
                                             </div>
                                         )}
