@@ -16,6 +16,7 @@ import {
 } from '../../store/slices/ordersSlice';
 import { setProofModal } from '../../store/slices/uiSlice';
 import Pagination from '../common/Pagination';
+import { API_ENDPOINTS } from '../../config/api';
 import './OrdersTab.css';
 import TableSkeleton from '../common/TableSkeleton';
 
@@ -246,64 +247,136 @@ const OrdersTab: React.FC<OrdersTabProps> = ({
         }
     }, [dispatch, expandedOrderId]);
 
-    // Tracking Helper Functions
-    const getTrackingForBuffalo = useCallback((orderId: string, buffaloNum: number, initialStatus: string, createdAt?: string) => {
-        const key = `${orderId}-${buffaloNum}`;
-        if (trackingData[key]) return trackingData[key];
+    // Real Tracking Integration
+    const [realTrackingData, setRealTrackingData] = useState<any>(null);
+    const [trackingLoading, setTrackingLoading] = useState(false);
 
-        let dateStr = '24-05-2025';
-        let timeStr = '10:30:00';
-
-        if (createdAt) {
-            const dateObj = new Date(createdAt);
-            if (!isNaN(dateObj.getTime())) {
-                const day = String(dateObj.getDate()).padStart(2, '0');
-                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-                const year = dateObj.getFullYear();
-                dateStr = `${day}-${month}-${year}`;
-
-                const hours = String(dateObj.getHours()).padStart(2, '0');
-                const minutes = String(dateObj.getMinutes()).padStart(2, '0');
-                const seconds = String(dateObj.getSeconds()).padStart(2, '0');
-                timeStr = `${hours}:${minutes}:${seconds}`;
-            }
-        }
-
-        let startStage = 1;
-        if (buffaloNum === 1) startStage = 2;
-        else if (buffaloNum === 2) startStage = 4;
-
-        const historyData: any = { 1: { date: dateStr, time: timeStr } };
-        if (buffaloNum === 2) {
-            historyData[2] = { date: dateStr, time: timeStr };
-            historyData[3] = { date: dateStr, time: timeStr };
-        }
-
-        return { currentStageId: startStage, history: historyData };
-    }, [trackingData]);
-
-    const handleStageUpdateLocal = (orderId: string, buffaloNum: number, nextStageId: number, currentTrackerState?: any) => {
-        const key = `${orderId}-${buffaloNum}`;
-        const now = new Date();
-        const date = now.toLocaleDateString('en-GB').replace(/\//g, '-');
-        const time = now.toLocaleTimeString('en-GB');
-
-        let newState;
-        if (trackingData[key]) {
-            newState = JSON.parse(JSON.stringify(trackingData[key]));
-        } else if (currentTrackerState) {
-            newState = JSON.parse(JSON.stringify(currentTrackerState));
+    useEffect(() => {
+        if (expandedOrderId) {
+            setTrackingLoading(true);
+            const fetchTracking = async () => {
+                try {
+                    const token = localStorage.getItem('token');
+                    const response = await fetch(API_ENDPOINTS.getOrderStages(expandedOrderId), {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    const data = await response.json();
+                    if (data.status === 'success') {
+                        setRealTrackingData(data);
+                    }
+                } catch (err) {
+                    console.error("Failed to fetch tracking", err);
+                } finally {
+                    setTrackingLoading(false);
+                }
+            };
+            fetchTracking();
         } else {
+            setRealTrackingData(null);
+        }
+    }, [expandedOrderId]);
+
+    // Construct history object from real data
+    const getTrackingForBuffalo = useCallback(() => {
+        if (!realTrackingData || !realTrackingData.timeline) return { currentStageId: 1, history: {} };
+
+        const history: any = {};
+        let maxStageId = 1;
+
+        // Map backend stages to frontend IDs
+        // BACKEND: ORDER_PLACED, PAYMENT_SUBMITTED, PAYMENT_VERIFIED, BUFFALOS_BOUGHT, IN_QUARANTINE, IN_TRANSIT, DELIVERED_TO_FARM
+        const stageMap: Record<string, number> = {
+            'ORDER_PLACED': 1,
+            'PAYMENT_SUBMITTED': 2,
+            'PAYMENT_VERIFIED': 3, // Payment Approved
+            'PAYMENT_VERIFICATION_PENDING': 2, // Map to Payment Pending/Submitted
+            'BUFFALOS_BOUGHT': 5,
+            'IN_QUARANTINE': 6,
+            'IN_TRANSIT': 7,
+            'DELIVERED_TO_FARM': 8
+        };
+
+        realTrackingData.timeline.forEach((item: any) => {
+            const sId = stageMap[item.stage];
+            if (sId) {
+                if (item.timestamp) {
+                    const dateObj = new Date(item.timestamp);
+                    const dateStr = dateObj.toLocaleDateString('en-GB').replace(/\//g, '-');
+                    const timeStr = dateObj.toLocaleTimeString('en-GB');
+                    history[sId] = { date: dateStr, time: timeStr };
+                }
+                // Update current stage to be the next after the last completed one
+                if (item.status === 'COMPLETED') {
+                    maxStageId = Math.max(maxStageId, sId + 1); // Point to next stage
+                    // Special case: if Delivered is completed, stay at 8
+                    if (sId === 8) maxStageId = 8;
+                } else if (item.status === 'IN_PROGRESS') {
+                    maxStageId = Math.max(maxStageId, sId);
+                }
+            }
+        });
+
+        // Ensure we don't exceed bounds
+        if (maxStageId > 8) maxStageId = 8;
+
+        return { currentStageId: maxStageId, history };
+    }, [realTrackingData]);
+
+    const handleStageUpdateLocal = async (orderId: string, buffaloNum: number, nextStageId: number) => {
+        // Map nextStageId to Backend Status
+        // Stages: 1:Timed, 2:PaymentPending, 3:Confirm, 4:Approved, 5:Market, 6:Quarantine, 7:Transit, 8:Delivered
+        let status = '';
+        if (nextStageId === 5) status = 'BOUGHT';
+        else if (nextStageId === 6) status = 'IN_QUARANTINE';
+        else if (nextStageId === 7) status = 'IN_TRANSIT';
+        else if (nextStageId === 8) status = 'DELIVERED';
+        else if (nextStageId === 4) status = 'APPROVED';
+
+        if (!status) {
+            alert("This stage cannot be updated manually via timeline. Use 'Approve' for payment verification.");
             return;
         }
 
-        const completedStageId = nextStageId - 1;
-        if (completedStageId > 1) {
-            newState.history[completedStageId] = { date, time };
-        }
-        newState.currentStageId = nextStageId;
+        try {
+            const token = localStorage.getItem('token');
+            // Assuming admin mobile is stored or passed. The API requires x-admin-mobile.
+            // We use the adminMobile from Redux state.
+            const response = await fetch(API_ENDPOINTS.updateOrderStatus(), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                    'x-admin-mobile': adminMobile
+                },
+                body: JSON.stringify({
+                    orderId: orderId,
+                    status: status
+                })
+            });
 
-        dispatch(setInitialTracking({ key, data: newState }));
+            const data = await response.json();
+            if (data.status === 'success') {
+                // Refresh tracking data
+                // We can just re-trigger the effect by toggling a flag or calling a refresh function
+                // simplest is to reset realTrackingData to null which triggers effect? No, effect depends on expandedOrderId
+
+                // Manually re-fetch
+                const refreshResponse = await fetch(API_ENDPOINTS.getOrderStages(orderId), {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const refreshData = await refreshResponse.json();
+                if (refreshData.status === 'success') {
+                    setRealTrackingData(refreshData);
+                }
+            } else {
+                alert(`Failed to update status: ${data.message}`);
+            }
+        } catch (err) {
+            console.error("Failed to update status", err);
+            alert("Error updating status");
+        }
     };
 
     const trackingStages = [
@@ -672,7 +745,7 @@ const OrdersTab: React.FC<OrdersTabProps> = ({
                                                                             const numBuffaloes = (activeUnitIndex === Math.floor(unit.numUnits) && (unit.numUnits % 1 !== 0)) ? 1 : 2;
                                                                             return Array.from({ length: numBuffaloes }).map((_, idx) => {
                                                                                 const buffaloNum = idx + 1;
-                                                                                const tracker = trackingData[`${unit.id}-${buffaloNum}`] || getTrackingForBuffalo(unit.id, buffaloNum, unit.paymentStatus, unit.created_at || unit.createdAt);
+                                                                                const tracker = trackingData[`${unit.id}-${buffaloNum}`] || getTrackingForBuffalo();
                                                                                 const currentStageId = tracker.currentStageId;
                                                                                 const trackerKey = `${unit.id}-${buffaloNum}`;
                                                                                 // Default to expanded if not set, or handle logic
@@ -741,7 +814,7 @@ const OrdersTab: React.FC<OrdersTabProps> = ({
                                                                                                                     {isCurrent && (
                                                                                                                         <button
                                                                                                                             className="tracking-update-btn"
-                                                                                                                            onClick={() => handleStageUpdateLocal(unit.id, buffaloNum, stage.id + 1, tracker)}
+                                                                                                                            onClick={() => handleStageUpdateLocal(unit.id, buffaloNum, stage.id + 1)}
                                                                                                                         >
                                                                                                                             {stage.id === 8 ? 'Confirm Delivery' : 'Update'}
                                                                                                                         </button>
