@@ -171,6 +171,8 @@ textarea.form-control {
     margin: 0;
     color: #64748b;
     line-height: 1.6;
+    white-space: pre-line;
+    /* Preserves line breaks for formatted text */
 }
 
 @media (max-width: 600px) {

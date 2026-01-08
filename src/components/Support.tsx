@@ -9,24 +9,71 @@ interface FAQ {
 
 const FAQS: FAQ[] = [
     {
-        question: "What is the Cattle Protection Fund (CPF)?",
-        answer: "The Cattle Protection Fund (CPF) is a mandatory component for every buffalo unit purchase. It ensures the welfare and protection of the livestock. The cost is fixed at ₹26,000 per unit, which includes 2 buffaloes and 2 calves."
+        question: "What is a Murrah buffalo and how can I identify it?",
+        answer: `The Murrah buffalo is one of the best dairy buffalo breeds in India, well known for its high milk yield, strong genetics, and adaptability to different climatic conditions.
+
+Identification features of Murrah buffalo:
+• Jet-black skin color
+• Short, tightly curved horns (spiral shape)
+• Broad head with a prominent forehead
+• Well-developed udder
+• Strong and compact body structure
+• High milk-producing capacity`
     },
     {
-        question: "How is my personal data used?",
-        answer: "We use your data primarily for account management, transaction verification (especially for manual payments), and to provide investment projections. We respect your privacy and only share data with essential partners like insurance providers."
+        question: "How can I identify a female Murrah buffalo in India?",
+        answer: `A female Murrah buffalo can be identified using the following characteristics:
+• Deep black skin without patches
+• Medium to large body size
+• Small, thick, and tightly curved horns
+• Well-shaped udder with evenly placed teats
+• Calm temperament and good feeding response
+• High milk yield potential
+
+All female Murrah buffaloes provided through Animal Kart are carefully selected and verified by experts.`
     },
     {
-        question: "How does the referral program work?",
-        answer: "When you refer a friend who completes a purchase, you earn 2% of their total purchase amount as Referral Coins. These coins are credited to your account and can be used for future unit purchases."
+        question: "After purchasing, how does delivery work and why is there a 6-month gap for the next buffalo unit?",
+        answer: `When you purchase 1 unit, you receive:
+• 2 Murrah buffaloes
+• 2 calves
+
+Delivery cycle explanation:
+• 1 Murrah buffalo + 1 calf will be transported to the farm within 1 month
+• The remaining 2 Murrah buffaloes + 2 calves will be imported and delivered within 6 months
+
+This structured cycle ensures:
+• Continuous monthly revenue
+• Proper quarantine and health monitoring
+• Reduced operational risk
+• Better long-term profitability
+
+This delivery cycle is designed to maximize income stability and lead to higher overall profit.`
     },
     {
-        question: "Can I withdraw my referral coins as cash?",
-        answer: "No, Referral Coins are non-transferable and cannot be withdrawn as cash. However, once you accumulate 363,000 coins, you can use them to purchase a full buffalo unit."
+        question: "Why is CPF (Cattle Protection Fund) mandatory?",
+        answer: `CPF is mandatory to ensure complete protection and long-term security of your livestock investment.
+
+CPF benefits include:
+• Full medical care in case of any health issues
+• Replacement of buffalo in case of critical loss
+• Artificial insemination support to ensure the birth of female Murrah calves only
+• Continuous health monitoring
+• Live CCTV access to monitor your buffaloes in real time
+
+CPF safeguards your asset and ensures uninterrupted income generation.`
     },
     {
-        question: "How long does payment verification take?",
-        answer: "For manual payments (Bank Transfer or Cheque), our Admin Team typically completes verification within 3 business days. Once verified, your order status will change from 'Pending' to 'Paid', and you can download your invoice."
+        question: "Why do I need to purchase at least 1 unit?",
+        answer: `1 unit = 2 Murrah buffaloes + 2 calves
+
+Purchasing 1 full unit is mandatory because:
+• It ensures higher and more stable income generation
+• It enables better milk production cycles
+• It allows eligibility for CPF benefits
+• It provides long-term profit scalability
+
+Purchasing only 1 buffalo + 1 calf does not generate sufficient income or profit and is therefore not supported.`
     }
 ];
 
