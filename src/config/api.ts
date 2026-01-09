@@ -1,16 +1,21 @@
 export const API_CONFIG = {
   getBaseUrl: () => {
-    const corsUrl = process.env.REACT_APP_CORS_URL || 'https://cors-couipk45fa-el.a.run.app';
-    const productionUrl = process.env.REACT_APP_PRODUCTION_URL || 'https://markwave-live-apis-couipk45fa-el.a.run.app';
-    const baseUrl = `${corsUrl}/${productionUrl}`;
-    return baseUrl;
+    const productionUrl = process.env.REACT_APP_PRODUCTION_URL || 'https://animalkart-live-apis-jn6cma3vvq-el.a.run.app';
+
+    // Only use CORS proxy in local development
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      return productionUrl;
+    } else {
+      const corsUrl = process.env.REACT_APP_CORS_URL || 'https://cors-612299373064.asia-south1.run.app';
+      return `${corsUrl}/${productionUrl}`;
+    }
   }
 };
 
 export const API_ENDPOINTS = {
   getUsers: () => `${API_CONFIG.getBaseUrl()}/users/customers`,
   getReferrals: () => `${API_CONFIG.getBaseUrl()}/users/referrals`,
-  createUser: () => `${API_CONFIG.getBaseUrl()}/users/`,
+  createUser: () => `${API_CONFIG.getBaseUrl()}/users/referral-signup`,
   getUserDetails: (mobile: string) => `${API_CONFIG.getBaseUrl()}/users/${mobile}`,
   verifyUser: () => `${API_CONFIG.getBaseUrl()}/users/verify`,
   updateUser: (mobile: string) => `${API_CONFIG.getBaseUrl()}/users/${mobile}`,
@@ -23,4 +28,6 @@ export const API_ENDPOINTS = {
   approveUnit: () => `${API_CONFIG.getBaseUrl()}/purchases/admin/units/approve`,
   rejectUnit: () => `${API_CONFIG.getBaseUrl()}/purchases/admin/units/reject`,
   uploadProductImage: (id: string) => `${API_CONFIG.getBaseUrl()}/products/${id}/images`,
+  getOrderStages: (orderId: string) => `${API_CONFIG.getBaseUrl()}/order-tracking/stages/${orderId}`,
+  updateOrderStatus: () => `${API_CONFIG.getBaseUrl()}/order-tracking/update-status`,
 };
