@@ -9,6 +9,7 @@ interface ReferralModalProps {
         mobile: string;
         first_name: string;
         last_name: string;
+        email?: string; // Added optional email
         refered_by_mobile: string;
         refered_by_name: string;
         referral_code?: string;
@@ -19,12 +20,13 @@ interface ReferralModalProps {
     onBlur: () => void;
     onSubmit: (e: React.FormEvent) => void;
     adminReferralCode?: string;
+    canEditReferralCode?: boolean;
 }
 
 
 
 const ReferralModal: React.FC<ReferralModalProps> = (props) => {
-    const { formData, onInputChange, onBlur, onSubmit } = props;
+    const { formData, onInputChange, onBlur, onSubmit, canEditReferralCode } = props;
     const dispatch = useAppDispatch();
     const showModal = useAppSelector((state: RootState) => state.ui.modals.referral);
 
@@ -102,15 +104,41 @@ const ReferralModal: React.FC<ReferralModalProps> = (props) => {
                             </div>
                         </div>
 
+                        {/* Optional Email */}
+                        <div className="form-group mt-4">
+                            <label className="form-label">
+                                Email (Optional)
+                            </label>
+                            <input
+                                type="email"
+                                name="email"
+                                value={formData.email || ''} // Handle undefined
+                                onChange={onInputChange}
+                                placeholder="Enter email address"
+                                className="form-input"
+                            />
+                        </div>
+
                         <div className="referrer-section">
                             <h4 className="section-title">Referrer Details</h4>
                             <div className="form-group">
                                 <label className="form-label">
                                     Referral Code
                                 </label>
-                                <div className="p-3 bg-slate-100 rounded-lg text-slate-700 font-mono tracking-wider font-semibold border border-slate-200">
-                                    {props.adminReferralCode || 'N/A'}
-                                </div>
+                                {canEditReferralCode ? (
+                                    <input
+                                        type="text"
+                                        name="referral_code"
+                                        value={formData.referral_code || ''}
+                                        onChange={onInputChange}
+                                        placeholder="Enter Referral Code"
+                                        className="form-input"
+                                    />
+                                ) : (
+                                    <div className="p-3 bg-slate-100 rounded-lg text-slate-700 font-mono tracking-wider font-semibold border border-slate-200">
+                                        {props.adminReferralCode || 'N/A'}
+                                    </div>
+                                )}
                             </div>
                             <div className="form-group mt-4">
                                 <label className="flex items-center gap-2 cursor-pointer">

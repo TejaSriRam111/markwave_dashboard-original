@@ -16,6 +16,7 @@ import AcfCalculatorTab from './components/sidebar-tabs/AcfCalculatorTab';
 
 // Public Pages
 import ReferralLandingPage from './components/public/ReferralLandingPage';
+import DeactivateUserPage from './components/public/DeactivateUserPage';
 
 // Redux
 import { approveOrder, rejectOrder } from './store/slices/ordersSlice';
@@ -240,6 +241,12 @@ function App() {
         <Route path="/referral-landing" element={
           <ConditionalLayoutWrapper>
             <ReferralLandingPage />
+          </ConditionalLayoutWrapper>
+        } />
+
+        <Route path="/deactivate-user" element={
+          <ConditionalLayoutWrapper>
+            <DeactivateUserPage />
           </ConditionalLayoutWrapper>
         } />
 

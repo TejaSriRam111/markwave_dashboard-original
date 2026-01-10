@@ -257,10 +257,13 @@ const OrdersTab: React.FC<OrdersTabProps> = ({
             const fetchTracking = async () => {
                 try {
                     const token = localStorage.getItem('token');
-                    const response = await fetch(API_ENDPOINTS.getOrderStages(expandedOrderId), {
+                    const response = await fetch(API_ENDPOINTS.getOrderStatus(), {
+                        method: 'POST',
                         headers: {
-                            'Authorization': `Bearer ${token}`
-                        }
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ orderId: expandedOrderId })
                     });
                     const data = await response.json();
                     if (data.status === 'success') {
@@ -290,12 +293,14 @@ const OrdersTab: React.FC<OrdersTabProps> = ({
         const stageMap: Record<string, number> = {
             'ORDER_PLACED': 1,
             'PAYMENT_SUBMITTED': 2,
-            'PAYMENT_VERIFIED': 3, // Payment Approved
-            'PAYMENT_VERIFICATION_PENDING': 2, // Map to Payment Pending/Submitted
-            'BUFFALOS_BOUGHT': 5,
-            'IN_QUARANTINE': 6,
-            'IN_TRANSIT': 7,
-            'DELIVERED_TO_FARM': 8
+            'PAYMENT_VERIFICATION_PENDING': 2,
+            'PAYMENT_VERIFIED': 3,
+            'APPROVED': 3,
+            'BOUGHT': 4, // Corrected per user request
+            'IN_QUARANTINE': 5,
+            'IN_TRANSIT': 6,
+            'DELIVERED_TO_FARM': 7,
+            'DELIVERED': 7 // Added per requirement
         };
 
         realTrackingData.timeline.forEach((item: any) => {
@@ -309,40 +314,48 @@ const OrdersTab: React.FC<OrdersTabProps> = ({
                 }
                 // Update current stage to be the next after the last completed one
                 if (item.status === 'COMPLETED') {
-                    maxStageId = Math.max(maxStageId, sId + 1); // Point to next stage
-                    // Special case: if Delivered is completed, stay at 8
-                    if (sId === 8) maxStageId = 8;
+                    maxStageId = Math.max(maxStageId, sId + 1);
+                    if (sId === 7) maxStageId = 7; // Stop at 7? Or 8? keeping 7 as max based on old logic cleanup
                 } else if (item.status === 'IN_PROGRESS') {
                     maxStageId = Math.max(maxStageId, sId);
                 }
             }
         });
 
-        // Ensure we don't exceed bounds
-        if (maxStageId > 8) maxStageId = 8;
+        // If maxStageId > 7, clamp it (unless we want to show 'Completed' state distinctly)
+        if (maxStageId > 7) maxStageId = 7;
 
         return { currentStageId: maxStageId, history };
     }, [realTrackingData]);
 
     const handleStageUpdateLocal = async (orderId: string, buffaloNum: number, nextStageId: number) => {
         // Map nextStageId to Backend Status
-        // Stages: 1:Timed, 2:PaymentPending, 3:Confirm, 4:Approved, 5:Market, 6:Quarantine, 7:Transit, 8:Delivered
+        // Stages: 1:Placed, 2:PaymentPending, 3:Approved, 4:Market, 5:Quarantine, 6:Transit, 7:Delivered
         let status = '';
-        if (nextStageId === 5) status = 'BOUGHT';
-        else if (nextStageId === 6) status = 'IN_QUARANTINE';
-        else if (nextStageId === 7) status = 'IN_TRANSIT';
-        else if (nextStageId === 8) status = 'DELIVERED';
-        else if (nextStageId === 4) status = 'APPROVED';
+        if (nextStageId === 4) status = 'BOUGHT';
+        else if (nextStageId === 5) status = 'IN_QUARANTINE';
+        else if (nextStageId === 6) status = 'IN_TRANSIT';
+        else if (nextStageId === 7) status = 'DELIVERED';
+        else if (nextStageId === 3) status = 'APPROVED';
 
         if (!status) {
+            // If nextStageId is 8 (after Delivered), we might just allow it if we want to "Complete" the order visually?
+            // But API has no status for it.
             alert("Update restricted for this stage. Please complete Payment verification via the main 'Approve' button.");
             return;
         }
 
+        const payload = {
+            orderId: orderId,
+            status: status,
+            buffaloId: String(buffaloNum), // Always send buffaloId
+            adminMobile: adminMobile,
+            description: "",
+            location: ""
+        };
+
         try {
             const token = localStorage.getItem('token');
-            // Assuming admin mobile is stored or passed. The API requires x-admin-mobile.
-            // We use the adminMobile from Redux state.
             const response = await fetch(API_ENDPOINTS.updateOrderStatus(), {
                 method: 'POST',
                 headers: {
@@ -350,21 +363,20 @@ const OrdersTab: React.FC<OrdersTabProps> = ({
                     'Authorization': `Bearer ${token}`,
                     'x-admin-mobile': adminMobile
                 },
-                body: JSON.stringify({
-                    orderId: orderId,
-                    status: status
-                })
+                body: JSON.stringify(payload)
             });
 
             const data = await response.json();
             if (data.status === 'success') {
                 // Refresh tracking data
-                // We can just re-trigger the effect by toggling a flag or calling a refresh function
-                // simplest is to reset realTrackingData to null which triggers effect? No, effect depends on expandedOrderId
-
                 // Manually re-fetch
-                const refreshResponse = await fetch(API_ENDPOINTS.getOrderStages(orderId), {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                const refreshResponse = await fetch(API_ENDPOINTS.getOrderStatus(), {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ orderId: orderId })
                 });
                 const refreshData = await refreshResponse.json();
                 if (refreshData.status === 'success') {
@@ -382,13 +394,14 @@ const OrdersTab: React.FC<OrdersTabProps> = ({
     const trackingStages = [
         { id: 1, label: 'Order Placed' },
         { id: 2, label: 'Payment Pending' },
-        { id: 3, label: 'Order Confirm' },
-        { id: 4, label: 'Order Approved' },
-        { id: 5, label: 'Order in Market' },
-        { id: 6, label: 'Order in Quarantine' },
-        { id: 7, label: 'In Transit' },
-        { id: 8, label: 'Order Delivered' }
+        { id: 3, label: 'Order Approved' },
+        { id: 4, label: 'Order in Market' },
+        { id: 5, label: 'Order in Quarantine' },
+        { id: 6, label: 'In Transit' },
+        { id: 7, label: 'Order Delivered' }
     ];
+
+
 
     // Pagination
     const totalPages = Math.ceil((totalCount || 0) / pageSize);
@@ -437,8 +450,8 @@ const OrdersTab: React.FC<OrdersTabProps> = ({
                         <CheckCircle size={24} />
                     </div>
                     <div className="card-content">
-                        <h3>{statusFilter === 'PENDING_ADMIN_VERIFICATION' ? totalCount : (statusCounts['PENDING_ADMIN_VERIFICATION'] ?? '-')}</h3>
-                        <p>Admin Approval</p>
+                        {/* <h3>{statusFilter === 'PENDING_ADMIN_VERIFICATION' ? totalCount : (statusCounts['PENDING_ADMIN_VERIFICATION'] ?? '-')}</h3> */}
+                        <p>Pending Admin Approval</p>
                     </div>
                 </div>
 
@@ -450,7 +463,7 @@ const OrdersTab: React.FC<OrdersTabProps> = ({
                         <CheckSquare size={24} />
                     </div>
                     <div className="card-content">
-                        <h3>{statusFilter === 'PAID' ? totalCount : (statusCounts['PAID'] ?? '-')}</h3>
+                        {/* <h3>{statusFilter === 'PAID' ? totalCount : (statusCounts['PAID'] ?? '-')}</h3> */}
                         <p>Approved/Paid</p>
                     </div>
                 </div>
@@ -463,7 +476,7 @@ const OrdersTab: React.FC<OrdersTabProps> = ({
                         <XCircle size={24} />
                     </div>
                     <div className="card-content">
-                        <h3>{statusFilter === 'REJECTED' ? totalCount : (statusCounts['REJECTED'] ?? '-')}</h3>
+                        {/* <h3>{statusFilter === 'REJECTED' ? totalCount : (statusCounts['REJECTED'] ?? '-')}</h3> */}
                         <p>Rejected</p>
                     </div>
                 </div>
@@ -476,7 +489,7 @@ const OrdersTab: React.FC<OrdersTabProps> = ({
                         <Clock size={24} />
                     </div>
                     <div className="card-content">
-                        <h3>{statusFilter === 'PENDING_PAYMENT' ? totalCount : (statusCounts['PENDING_PAYMENT'] ?? '-')}</h3>
+                        {/* <h3>{statusFilter === 'PENDING_PAYMENT' ? totalCount : (statusCounts['PENDING_PAYMENT'] ?? '-')}</h3> */}
                         <p>Payment Due</p>
                     </div>
                 </div>
@@ -495,15 +508,12 @@ const OrdersTab: React.FC<OrdersTabProps> = ({
                     <thead style={{ backgroundColor: '#f0f2f5' }}>
                         <tr>
                             <th>S.No</th>
-                            <th className="th-user-name">User Name</th>
-                            <th>Status</th>
-                            <th>Units</th>
-                            <th>Order Id</th>
-                            <th>User Mobile</th>
-
-                            <th>Email</th>
                             <th>Ordered Date</th>
-                            <th>Amount</th>
+                            <th>Order Id</th>
+                            <th>Units</th>
+                            <th className="th-user-name">User Name</th>
+                            <th>Mobile</th>
+                            <th>Status</th>
                             <th style={{ minWidth: '140px' }}>
                                 <select
                                     value={paymentTypeFilter}
@@ -519,6 +529,7 @@ const OrdersTab: React.FC<OrdersTabProps> = ({
                                 </select>
                             </th>
                             <th className="th-proof">Payment Image Proof</th>
+                            <th>Amount</th>
                             {statusFilter === 'PENDING_ADMIN_VERIFICATION' && <th>Actions</th>}
                             {statusFilter === 'REJECTED' && <th>Rejected Reason</th>}
                         </tr>
@@ -545,7 +556,35 @@ const OrdersTab: React.FC<OrdersTabProps> = ({
                                     <React.Fragment key={`${unit.id || 'order'}-${index}`}>
                                         <tr>
                                             <td>{serialNumber}</td>
+                                            <td>
+                                                {unit.placedAt ? (
+                                                    <div style={{ display: 'flex', flexDirection: 'column', fontSize: '12px', fontWeight: 'bold' }}>
+                                                        <span >
+                                                            {new Date(unit.placedAt).toLocaleDateString('en-GB')}
+                                                        </span>
+                                                        <span style={{ color: '#64748b', fontSize: '11px' }}>
+                                                            {new Date(unit.placedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                                                        </span>
+                                                    </div>
+                                                ) : '-'}
+                                            </td>
+                                            <td>
+                                                <button
+                                                    className="check-status-btn"
+                                                    onClick={() => isExpandable && handleToggleExpansion(unit.id)}
+                                                    style={{
+                                                        fontWeight: 700,
+                                                        cursor: isExpandable ? 'pointer' : 'default',
+                                                        textDecoration: isExpandable ? 'underline' : 'none',
+                                                        color: isExpandable ? '#3b82f6' : '#374151'
+                                                    }}
+                                                >
+                                                    {unit.id}
+                                                </button>
+                                            </td>
+                                            <td>{unit.numUnits}</td>
                                             <td>{inv.name}</td>
+                                            <td>{inv.mobile ? `******${String(inv.mobile).slice(-4)}` : '-'}</td>
                                             <td className="td-vertical-middle">
                                                 {(() => {
                                                     let statusClass = '';
@@ -572,36 +611,6 @@ const OrdersTab: React.FC<OrdersTabProps> = ({
                                                     );
                                                 })()}
                                             </td>
-                                            <td>{unit.numUnits}</td>
-                                            <td>
-                                                <button
-                                                    className="check-status-btn"
-                                                    onClick={() => isExpandable && handleToggleExpansion(unit.id)}
-                                                    style={{
-                                                        fontWeight: 700,
-                                                        cursor: isExpandable ? 'pointer' : 'default',
-                                                        textDecoration: isExpandable ? 'underline' : 'none',
-                                                        color: isExpandable ? '#3b82f6' : '#374151'
-                                                    }}
-                                                >
-                                                    {unit.id}
-                                                </button>
-                                            </td>
-                                            <td>{inv.mobile}</td>
-                                            <td>{inv.email || '-'}</td>
-                                            <td>
-                                                {unit.placedAt ? (
-                                                    <div style={{ display: 'flex', flexDirection: 'column', fontSize: '12px', fontWeight: 'bold' }}>
-                                                        <span >
-                                                            {new Date(unit.placedAt).toLocaleDateString('en-GB')}
-                                                        </span>
-                                                        <span style={{ color: '#64748b', fontSize: '11px' }}>
-                                                            {new Date(unit.placedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
-                                                        </span>
-                                                    </div>
-                                                ) : '-'}
-                                            </td>
-                                            <td>{tx.amount ?? '-'}</td>
                                             <td className="payment-type-cell">
                                                 {tx.paymentType === 'BANK_TRANSFER' || tx.paymentType === 'CHEQUE' ? (
                                                     <div className="bank-transfer-hover-container">
@@ -687,6 +696,7 @@ const OrdersTab: React.FC<OrdersTabProps> = ({
                                                     </button>
                                                 ) : '-'}
                                             </td>
+                                            <td>{tx.amount ?? '-'}</td>
                                             {statusFilter === 'REJECTED' && <td>
                                                 {unit.rejectedReason || 'No reason provided'}
                                             </td>}
@@ -718,130 +728,117 @@ const OrdersTab: React.FC<OrdersTabProps> = ({
                                             <tr className="tracking-expanded-row">
                                                 <td colSpan={currentCols} className="tracking-expanded-cell">
                                                     <div className="order-expand-animation tracking-expand-container">
-                                                        <div className="tracking-interface-container">
-                                                            <div className="tracking-units-sidebar">
-                                                                <div className="tracking-units-title">Select Unit</div>
-                                                                <div className="units-sidebar tracking-units-list">
-                                                                    {Array.from({ length: Math.ceil(unit.numUnits || 0) }).map((_, i) => {
-                                                                        const unitBufCount = (i === Math.floor(unit.numUnits) && (unit.numUnits % 1 !== 0)) ? 1 : 2;
-                                                                        return (
-                                                                            <button
-                                                                                key={i}
-                                                                                onClick={() => dispatch(setActiveUnitIndex(activeUnitIndex === i ? null : i))}
-                                                                                className={`tracking-unit-btn ${activeUnitIndex === i ? 'active' : 'inactive'}`}
-                                                                            >
-                                                                                <span>Unit {i + 1} {unitBufCount === 1 && <span className="tracking-unit-buf-count">(1 Buffalo)</span>}</span>
-                                                                                <span className="tracking-unit-btn-subtitle">{unit.breedId || 'MURRAH-001'}</span>
-                                                                            </button>
-                                                                        );
-                                                                    })}
-                                                                </div>
-                                                            </div>
+                                                        <div className="tracking-interface-container" style={{ display: 'block' }}>
+                                                            {/* Sidebar removed */}
+                                                            <div className="tracking-main-content" style={{ width: '100%' }}>
+                                                                <div className="order-expand-animation tracking-buffalo-grid">
+                                                                    {(() => {
+                                                                        const totalUnits = parseFloat(String(unit.numUnits || 0));
+                                                                        // Logic: Always 2 Cycles.
+                                                                        // Cycle 1: 50% of units.
+                                                                        // Cycle 2: 50% of units.
+                                                                        // e.g. 5 units -> 2.5 units per cycle.
+                                                                        const cycleUnits = totalUnits / 2;
 
-                                                            <div className="tracking-main-content">
-                                                                {activeUnitIndex !== null ? (
-                                                                    <div className="order-expand-animation tracking-buffalo-grid">
-                                                                        {(() => {
-                                                                            const numBuffaloes = (activeUnitIndex === Math.floor(unit.numUnits) && (unit.numUnits % 1 !== 0)) ? 1 : 2;
-                                                                            return Array.from({ length: numBuffaloes }).map((_, idx) => {
-                                                                                const buffaloNum = idx + 1;
-                                                                                const tracker = trackingData[`${unit.id}-${buffaloNum}`] || getTrackingForBuffalo();
-                                                                                const currentStageId = tracker.currentStageId;
-                                                                                const trackerKey = `${unit.id}-${buffaloNum}`;
-                                                                                // Default to expanded if not set, or handle logic
-                                                                                const isExpanded = expandedTrackerKeys[trackerKey] !== false; // Default true or false? Let's default true for Orders for better visibility? Or false to save space?
-                                                                                // TrackingTab defaults to false (undefined -> false).
-                                                                                // Let's match TrackingTab behavior: undefined -> false.
-                                                                                // Wait, let's check TrackingTab again: ` !!expandedTrackerKeys[trackerKey]` -> false by default.
-                                                                                // User said "all tabs... should be expand and minimize".
-                                                                                // If I default to false, they won't see it immediately.
-                                                                                // Let's default to TRUE for OrdersTab as it was visibly open before.
-                                                                                // Use: `expandedTrackerKeys[trackerKey] !== false` which means default is TRUE.
+                                                                        return [1, 2].map(cycleNum => {
+                                                                            // Calculate buffaloes for this cycle (Unit * 2 buffaloes/unit)
+                                                                            const buffaloesInCycle = cycleUnits * 2;
 
-                                                                                // For Cycle 2, hide stages 1, 2, 3
-                                                                                const timelineStages = buffaloNum === 2
-                                                                                    ? trackingStages.filter(s => s.id >= 4)
-                                                                                    : trackingStages;
+                                                                            // Text formatting
+                                                                            const buffaloText = buffaloesInCycle === 1
+                                                                                ? '(1 Buffalo, 1 Calf)'
+                                                                                : `(${buffaloesInCycle} Buffaloes, ${buffaloesInCycle} Calves)`;
 
-                                                                                return (
-                                                                                    <div key={buffaloNum} className="tracking-buffalo-card">
-                                                                                        <div className="tracking-buffalo-title">
-                                                                                            <span>Cycle-{buffaloNum}</span>
-                                                                                            <div className="header-actions">
-                                                                                                <button
-                                                                                                    onClick={() => setExpandedTrackerKeys(prev => ({ ...prev, [trackerKey]: !isExpanded }))}
-                                                                                                    className="tracking-individual-expand-btn"
-                                                                                                >
-                                                                                                    {isExpanded ? 'Minimize' : 'Expand'}
-                                                                                                    <span className={`tracking-chevron ${isExpanded ? 'up' : 'down'}`}>
-                                                                                                        {isExpanded ? '▲' : '▼'}
-                                                                                                    </span>
-                                                                                                </button>
-                                                                                            </div>
+                                                                            // cycleNum matches buffaloNum concept (1 or 2)
+                                                                            const trackerKey = `${unit.id}-${cycleNum}`;
+                                                                            const tracker = trackingData[trackerKey] || getTrackingForBuffalo();
+                                                                            const currentStageId = tracker.currentStageId;
+                                                                            const isExpanded = expandedTrackerKeys[trackerKey] !== false;
+
+                                                                            // For all Cycles, show all stages.
+                                                                            const timelineStages = trackingStages;
+
+                                                                            return (
+                                                                                <div key={cycleNum} className="tracking-buffalo-card" style={{ marginBottom: '20px' }}>
+                                                                                    <div className="tracking-buffalo-title">
+                                                                                        <span>{`Cycle ${cycleNum} (${cycleUnits} ${cycleUnits === 1 ? 'Unit' : 'Units'} - ${buffaloText})`}</span>
+                                                                                        <div className="header-actions">
+                                                                                            <button
+                                                                                                onClick={() => setExpandedTrackerKeys(prev => ({ ...prev, [trackerKey]: !isExpanded }))}
+                                                                                                className="tracking-individual-expand-btn"
+                                                                                            >
+                                                                                                {isExpanded ? 'Minimize' : 'Expand'}
+                                                                                                <span className={`tracking-chevron ${isExpanded ? 'up' : 'down'}`}>
+                                                                                                    {isExpanded ? '▲' : '▼'}
+                                                                                                </span>
+                                                                                            </button>
                                                                                         </div>
+                                                                                    </div>
 
-                                                                                        {isExpanded && (
-                                                                                            <div className="tracking-timeline-container order-expand-animation">
-                                                                                                {timelineStages.map((stage, sIdx) => {
-                                                                                                    const isLast = sIdx === timelineStages.length - 1;
-                                                                                                    const isStepCompleted = stage.id < currentStageId;
-                                                                                                    const isCurrent = stage.id === currentStageId;
-                                                                                                    const stageDate = tracker.history[stage.id]?.date || '-';
-                                                                                                    const stageTime = tracker.history[stage.id]?.time || '-';
+                                                                                    {isExpanded && (
+                                                                                        <div className="tracking-timeline-container order-expand-animation">
+                                                                                            {timelineStages.map((stage, sIdx) => {
+                                                                                                const isLast = sIdx === timelineStages.length - 1;
+                                                                                                const isStepCompleted = stage.id < currentStageId;
+                                                                                                const isCurrent = stage.id === currentStageId;
+                                                                                                const stageDate = tracker.history[stage.id]?.date || '-';
+                                                                                                const stageTime = tracker.history[stage.id]?.time || '-';
 
-                                                                                                    return (
-                                                                                                        <div key={stage.id} className="tracking-timeline-item">
-                                                                                                            <div className="tracking-timeline-date-col">
-                                                                                                                <div className="tracking-timeline-date">{stageDate}</div>
-                                                                                                                {stageTime !== '-' && <div className="tracking-timeline-time-sub">{stageTime}</div>}
-                                                                                                            </div>
+                                                                                                return (
+                                                                                                    <div key={stage.id} className="tracking-timeline-item">
+                                                                                                        <div className="tracking-timeline-date-col">
+                                                                                                            <div className="tracking-timeline-date">{stageDate}</div>
+                                                                                                            {stageTime !== '-' && <div className="tracking-timeline-time-sub">{stageTime}</div>}
+                                                                                                        </div>
 
-                                                                                                            <div className="tracking-timeline-marker-col">
-                                                                                                                {!isLast && (
-                                                                                                                    <div className={`tracking-timeline-line ${isStepCompleted ? 'completed' : 'pending'}`} />
-                                                                                                                )}
-                                                                                                                <div className={`tracking-timeline-dot ${isStepCompleted ? 'completed' : isCurrent ? 'current' : 'pending'}`}>
-                                                                                                                    {isStepCompleted ? '✓' : stage.id}
-                                                                                                                </div>
-                                                                                                            </div>
-
-                                                                                                            <div className={`tracking-timeline-content-col ${isLast ? 'last' : ''}`}>
-                                                                                                                <div className="tracking-timeline-header">
-                                                                                                                    <div className={`tracking-timeline-label ${isStepCompleted ? 'completed' : isCurrent ? 'current' : 'pending'}`}>
-                                                                                                                        {stage.label}
-                                                                                                                    </div>
-
-                                                                                                                    {isCurrent && stage.id >= 3 && (
-                                                                                                                        <button
-                                                                                                                            className="tracking-update-btn"
-                                                                                                                            onClick={() => handleStageUpdateLocal(unit.id, buffaloNum, stage.id)}
-                                                                                                                        >
-                                                                                                                            {stage.id === 8 ? 'Confirm Delivery' : 'Update'}
-                                                                                                                        </button>
-                                                                                                                    )}
-
-                                                                                                                    {isStepCompleted && (
-                                                                                                                        <span className="tracking-completed-badge">
-                                                                                                                            {stage.id === 8 ? 'Delivered' : 'Completed'}
-                                                                                                                        </span>
-                                                                                                                    )}
-                                                                                                                </div>
+                                                                                                        <div className="tracking-timeline-marker-col">
+                                                                                                            {!isLast && (
+                                                                                                                <div className={`tracking-timeline-line ${isStepCompleted ? 'completed' : 'pending'}`} />
+                                                                                                            )}
+                                                                                                            <div className={`tracking-timeline-dot ${isStepCompleted ? 'completed' : isCurrent ? 'current' : 'pending'}`}>
+                                                                                                                {isStepCompleted ? '✓' : stage.id}
                                                                                                             </div>
                                                                                                         </div>
-                                                                                                    );
-                                                                                                })}
-                                                                                            </div>
-                                                                                        )}
-                                                                                    </div>
-                                                                                );
-                                                                            });
-                                                                        })()}
-                                                                    </div>
-                                                                ) : (
-                                                                    <div className="tracking-no-selection-placeholder">
-                                                                        Select a unit to see tracking progress
-                                                                    </div>
-                                                                )}
+
+                                                                                                        <div className={`tracking-timeline-content-col ${isLast ? 'last' : ''}`}>
+                                                                                                            <div className="tracking-timeline-header">
+                                                                                                                <div className={`tracking-timeline-label ${isStepCompleted ? 'completed' : isCurrent ? 'current' : 'pending'}`}>
+                                                                                                                    {stage.label}
+                                                                                                                </div>
+
+                                                                                                                {isCurrent && stage.id >= 3 && stage.id < 7 && (
+                                                                                                                    <button
+                                                                                                                        className="tracking-update-btn"
+                                                                                                                        onClick={() => handleStageUpdateLocal(unit.id, cycleNum, stage.id + 1)}
+                                                                                                                    >
+                                                                                                                        {(() => {
+                                                                                                                            const nextId = stage.id + 1;
+                                                                                                                            if (nextId === 4) return 'Move to Market';
+                                                                                                                            if (nextId === 5) return 'Move to Quarantine';
+                                                                                                                            if (nextId === 6) return 'Start Transit';
+                                                                                                                            if (nextId === 7) return 'Confirm Delivery';
+                                                                                                                            return 'Update';
+                                                                                                                        })()}
+                                                                                                                    </button>
+                                                                                                                )}
+
+                                                                                                                {isStepCompleted && (
+                                                                                                                    <span className="tracking-completed-badge">
+                                                                                                                        {stage.id === 7 ? 'Delivered' : 'Completed'}
+                                                                                                                    </span>
+                                                                                                                )}
+                                                                                                            </div>
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                );
+                                                                                            })}
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                            );
+                                                                        })
+                                                                    })()}
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>

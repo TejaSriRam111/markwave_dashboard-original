@@ -1,8 +1,7 @@
-
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import './ReferralLandingPage.css';
-import { CheckCircle, ShieldCheck, MapPin } from 'lucide-react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { CheckCircle, ShieldCheck, MapPin, Share2, Copy, Check } from 'lucide-react';
+import { Link, useSearchParams, useLocation } from 'react-router-dom';
 import { useAppDispatch } from '../../store/hooks';
 import { createReferralUser } from '../../store/slices/usersSlice';
 
@@ -53,7 +52,14 @@ const Modal = ({ isOpen, type, message, onClose }: { isOpen: boolean; type: 'suc
 const ReferralLandingPage = () => {
     const dispatch = useAppDispatch();
     const [searchParams] = useSearchParams();
-    const referralCode = searchParams.get('referral_code') || '';
+    const location = useLocation();
+
+    // Get code from URL OR from navigation state (dashboard)
+    const urlReferralCode = searchParams.get('referral_code');
+    const stateReferralCode = location.state?.adminReferralCode;
+    const referralCode = urlReferralCode || stateReferralCode || '';
+    const isFromDashboard = location.state?.fromDashboard;
+
     const [loading, setLoading] = React.useState(false);
     const [modalConfig, setModalConfig] = React.useState<{ isOpen: boolean; type: 'success' | 'error'; message: string }>({
         isOpen: false,
@@ -61,8 +67,10 @@ const ReferralLandingPage = () => {
         message: ''
     });
     const [formData, setFormData] = React.useState({
-        name: '',
-        mobile: ''
+        mobile: '',
+        first_name: '',
+        last_name: '',
+        email: ''
     });
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -98,15 +106,11 @@ const ReferralLandingPage = () => {
         setLoading(true);
 
         try {
-            // Split name into first and last name for API compatibility
-            const nameParts = formData.name.trim().split(' ');
-            const firstName = nameParts[0];
-            const lastName = nameParts.slice(1).join(' ') || '';
-
             const payload = {
-                first_name: firstName,
-                last_name: lastName,
+                first_name: formData.first_name,
+                last_name: formData.last_name,
                 mobile: formData.mobile,
+                email: formData.email, // Optional email
                 referral_code: referralCode,
                 role: 'Investor' // Default role for public signups
             };
@@ -123,7 +127,7 @@ const ReferralLandingPage = () => {
                 type: 'success',
                 message: 'User created successfully! Our team will contact you soon.'
             });
-            setFormData({ name: '', mobile: '' });
+            setFormData({ mobile: '', first_name: '', last_name: '', email: '' });
         } catch (error: any) {
             const msg = typeof error === 'string' ? error : (error?.message || 'Failed to register. Please try again.');
             const isExistError = msg.toLowerCase().includes('exist') || msg.toLowerCase().includes('already');
@@ -161,6 +165,55 @@ const ReferralLandingPage = () => {
                 You have been invited to enjoy sustainable returns with Animalkart! 🥳
             </div>
 
+            {/* Admin Share Bar - Visible if referral code exists */}
+            {referralCode && (
+                <div className="w-full max-w-4xl mx-auto mt-4 px-4">
+                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-blue-50 rounded-full" style={{ color: '#238E8B' }}>
+                                <Share2 size={20} />
+                            </div>
+                            <div>
+                                <h3 className="font-semibold text-black">Share Your Referral Link</h3>
+                                <p className="text-sm text-black">Code: <span className="font-mono font-bold">{referralCode}</span></p>
+                            </div>
+                        </div>
+                        <div className="flex gap-2 w-full sm:w-auto">
+                            <button
+                                onClick={() => {
+                                    const url = `${window.location.origin}${window.location.pathname}?referral_code=${referralCode}`;
+                                    navigator.clipboard.writeText(url);
+                                    // Optional: Show toast
+                                    const btn = document.getElementById('copy-btn-text');
+                                    if (btn) btn.innerText = 'Copied!';
+                                    setTimeout(() => { if (btn) btn.innerText = 'Copy Link'; }, 2000);
+                                }}
+                                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-black font-medium hover:bg-gray-50 transition-colors"
+                            >
+                                <Copy size={16} />
+                                <span id="copy-btn-text">Copy Link</span>
+                            </button>
+                            {navigator.share && (
+                                <button
+                                    onClick={() => {
+                                        const url = `${window.location.origin}${window.location.pathname}?referral_code=${referralCode}`;
+                                        navigator.share({
+                                            title: 'Join Animalkart',
+                                            text: 'Use my referral code to join Animalkart!',
+                                            url: url
+                                        }).catch(console.error);
+                                    }}
+                                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors referral-btn"
+                                >
+                                    <Share2 size={16} />
+                                    Share
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Hero Section */}
             <section className="landing-hero">
                 {/* Left Content - Image Only */}
@@ -181,24 +234,16 @@ const ReferralLandingPage = () => {
                         <div className="form-header">
                             <h2 className="form-title">Get Started Today</h2>
                             <p className="form-subtitle">
-                                Invest in <span className="font-semibold text-slate-800">Sustainable Assets</span>
+                                Invest in <span className="font-semibold text-black">Sustainable Assets</span>
                             </p>
                             <div className="trust-badge">
                                 <ShieldCheck size={16} fill="currentColor" />
-                                Trusted by 10k+ farmers & investors
+                                Trusted by 10k+ customers
                             </div>
                         </div>
 
                         <form onSubmit={handleSubmit}>
-                            <input
-                                type="text"
-                                name="name"
-                                placeholder="Enter your name *"
-                                className="landing-input"
-                                value={formData.name}
-                                onChange={handleInputChange}
-                                required
-                            />
+                            {/* 1. Mobile Number */}
                             <input
                                 type="tel"
                                 name="mobile"
@@ -207,6 +252,40 @@ const ReferralLandingPage = () => {
                                 value={formData.mobile}
                                 onChange={handleInputChange}
                                 required
+                            />
+
+                            {/* 2. First Name & Last Name */}
+                            <div style={{ display: 'flex', gap: '10px' }}>
+                                <input
+                                    type="text"
+                                    name="first_name"
+                                    placeholder="First Name *"
+                                    className="landing-input"
+                                    value={formData.first_name}
+                                    onChange={handleInputChange}
+                                    required
+                                    style={{ flex: 1 }}
+                                />
+                                <input
+                                    type="text"
+                                    name="last_name"
+                                    placeholder="Last Name *"
+                                    className="landing-input"
+                                    value={formData.last_name}
+                                    onChange={handleInputChange}
+                                    required
+                                    style={{ flex: 1 }}
+                                />
+                            </div>
+
+                            {/* 3. Email (Optional) */}
+                            <input
+                                type="email"
+                                name="email"
+                                placeholder="Email Address (Optional)"
+                                className="landing-input"
+                                value={formData.email}
+                                onChange={handleInputChange}
                             />
                             <input
                                 type="text"
@@ -220,13 +299,13 @@ const ReferralLandingPage = () => {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full bg-blue-600 text-white font-bold py-3 rounded-full hover:bg-blue-700 transition mt-6 shadow-lg uppercase tracking-wide mb-4 disabled:opacity-70 disabled:cursor-not-allowed"
+                                className="w-full font-bold py-3 rounded-full transition mt-6 shadow-lg uppercase tracking-wide mb-4 disabled:opacity-70 disabled:cursor-not-allowed referral-btn"
                             >
                                 {loading ? 'Submitting...' : 'Submit'}
                             </button>
 
-                            <div className="text-center text-xs text-gray-500 mt-2">
-                                By clicking submit, you agree to our <Link to="/privacy-policy" className="underline hover:text-blue-600" target="_blank">Terms and Policy</Link>
+                            <div className="text-center text-xs text-black mt-2">
+                                By clicking submit, you agree to our <Link to="/privacy-policy" className="underline hover:text-blue-600" target="_blank" style={{ color: '#000000' }}>Terms and Policy</Link>
                             </div>
                         </form>
                     </div>
@@ -234,11 +313,11 @@ const ReferralLandingPage = () => {
             </section>
 
             {/* Whatsapp Float */}
-            <div className="whatsapp-float">
+            {/* <div className="whatsapp-float">
                 <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
                     <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.658-.698c1.028.56 2.052.871 3.101.871l.001 0c3.181 0 5.768-2.586 5.768-5.766 0-1.541-.599-2.99-1.687-4.079C15.322 6.771 13.874 6.172 12.031 6.172zm5.723 8.356c-.236.666-1.166 1.258-1.594 1.332-.423.072-.942.203-3.266-.723-2.903-1.157-4.761-4.077-4.907-4.27-.145-.192-1.171-1.558-1.171-2.973 0-1.413.731-2.11 1.026-2.408.236-.239.522-.36.833-.36.145 0 .285.006.406.012.355.019.53.048.746.565.236.566.8 1.956.87 2.099.071.144.119.313.023.504-.095.191-.143.313-.286.481-.143.167-.302.373-.429.504-.144.143-.294.3-.127.585.167.287.742 1.225 1.593 1.983 1.09.972 1.933 1.272 2.208 1.415.275.144.434.12.598-.072.167-.191.716-.838.907-1.125.19-.287.38-.239.641-.144.262.096 1.666.786 1.951.928.286.144.476.216.547.336.072.119.072.694-.164 1.36z"></path>
                 </svg>
-            </div>
+            </div> */}
 
             <Modal
                 isOpen={modalConfig.isOpen}

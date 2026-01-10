@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './UserTabs.css';
 import axios from 'axios';
 import { API_ENDPOINTS } from '../../config/api';
-import { LayoutDashboard, Users, TreePine, ShoppingBag, LogOut, UserCheck, Menu, X, MapPin, Calculator, MonitorPlay, ChevronLeft, ChevronRight, ChevronDown, Shield as ShieldIcon, LifeBuoy } from 'lucide-react';
+import { LayoutDashboard, Users, TreePine, ShoppingBag, LogOut, UserCheck, Menu, X, MapPin, Calculator, MonitorPlay, ChevronLeft, ChevronRight, ChevronDown, Shield as ShieldIcon, LifeBuoy, UserMinus } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import type { RootState } from '../../store';
 import { useNavigate, useLocation, Routes, Route, Navigate } from 'react-router-dom';
@@ -97,11 +97,13 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
   else if (currentPath.includes('/privacy-policy')) activeTab = 'privacy';
   else if (currentPath.includes('/support')) activeTab = 'support';
   else if (currentPath.includes('/referral-landing')) activeTab = 'referral-landing';
+  else if (currentPath.includes('/deactivate-user')) activeTab = 'deactivate-user';
 
   const [formData, setFormData] = useState({
     mobile: '',
     first_name: '',
     last_name: '',
+    email: '', // Added optional email
     refered_by_mobile: '',
     refered_by_name: '',
     referral_code: '', // Added for API compliance
@@ -290,6 +292,7 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
         mobile: '',
         first_name: '',
         last_name: '',
+        email: '',
         refered_by_mobile: '',
         refered_by_name: '',
         referral_code: '',
@@ -626,7 +629,12 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
                 className={`nav-item ${activeTab === 'referral-landing' ? 'active-main' : ''}`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate('/referral-landing', { state: { fromDashboard: true } });
+                  navigate('/referral-landing', {
+                    state: {
+                      fromDashboard: true,
+                      adminReferralCode: adminReferralCode // Pass code
+                    }
+                  });
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
@@ -636,6 +644,26 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
               </button>
             </li>
 
+
+            {/* Deactivate User Page */}
+            <li>
+              <button
+                className={`nav-item ${activeTab === 'deactivate-user' ? 'active-main' : ''}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate('/deactivate-user', {
+                    state: {
+                      fromDashboard: true,
+                    }
+                  });
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                  <UserMinus size={18} />
+                  <span className="nav-text">Deactivate User</span>
+                </div>
+              </button>
+            </li>
 
             {/* Support */}
             <li>
@@ -717,6 +745,7 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
               onBlur={handleReferralMobileBlur}
               onSubmit={handleSubmit}
               adminReferralCode={adminReferralCode}
+              canEditReferralCode={true} // Allow editing in User Management
             />
 
             <EditReferralModal

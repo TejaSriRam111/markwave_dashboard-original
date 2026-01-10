@@ -28,6 +28,6 @@ export const API_ENDPOINTS = {
   approveUnit: () => `${API_CONFIG.getBaseUrl()}/purchases/admin/units/approve`,
   rejectUnit: () => `${API_CONFIG.getBaseUrl()}/purchases/admin/units/reject`,
   uploadProductImage: (id: string) => `${API_CONFIG.getBaseUrl()}/products/${id}/images`,
-  getOrderStages: (orderId: string) => `${API_CONFIG.getBaseUrl()}/order-tracking/stages/${orderId}`,
+  getOrderStatus: () => `${API_CONFIG.getBaseUrl()}/order-tracking/stages`,
   updateOrderStatus: () => `${API_CONFIG.getBaseUrl()}/order-tracking/update-status`,
 };

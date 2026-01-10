@@ -1,7 +1,7 @@
 .referral-landing-container {
-    min-height: 100vh;
+    min-height: 100%;
     font-family: 'Inter', sans-serif;
-    color: #334155;
+    color: #000000;
     background-color: #f3f6fc;
     /* Light blueish gray background like reference */
 }
@@ -12,8 +12,8 @@
     justify-content: space-between;
     align-items: center;
     padding: 12px 5%;
-    background: #4338ca;
-    /* Indigo Header */
+    background: #1e293b;
+    /* Main Dashboard Header Color */
     color: white;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
@@ -30,7 +30,7 @@
 .landing-brand img {
     height: 32px;
     filter: brightness(0) invert(1);
-    /* Make logo white if it's not */
+    /* Make logo white if it's not and background is dark */
 }
 
 .landing-nav-links {
@@ -74,7 +74,7 @@
 
 .promo-banner {
     background: #eef2ff;
-    color: #3730a3;
+    color: #000000;
     text-align: center;
     padding: 8px;
     font-size: 0.85rem;
@@ -166,7 +166,7 @@
 }
 
 .form-title {
-    color: #4338ca;
+    color: #000000;
     font-size: 1.3rem;
     font-weight: 800;
     margin-bottom: 10px;
@@ -175,7 +175,7 @@
 
 .form-subtitle {
     margin-bottom: 15px;
-    color: #64748b;
+    color: #000000;
     font-size: 0.95rem;
 }
 
@@ -206,9 +206,19 @@
 }
 
 .landing-input:focus {
-    border-color: #4338ca;
+    border-color: #238E8B;
     background: white;
-    box-shadow: 0 0 0 3px rgba(67, 56, 202, 0.1);
+    box-shadow: 0 0 0 3px rgba(35, 142, 139, 0.1);
+}
+
+.referral-btn {
+    background-color: #238E8B !important;
+    color: white !important;
+    transition: background-color 0.2s;
+}
+
+.referral-btn:hover {
+    background-color: #1b726f !important;
 }
 
 .service-features {
@@ -216,7 +226,7 @@
     padding: 0;
     margin-top: 25px;
     font-size: 0.9rem;
-    color: #334155;
+    color: #000000;
 }
 
 .service-features li {
