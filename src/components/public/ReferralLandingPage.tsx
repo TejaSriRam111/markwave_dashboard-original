@@ -103,6 +103,26 @@ const ReferralLandingPage = () => {
             return;
         }
 
+        // Name Validation
+        if (formData.first_name.length > 30 || formData.last_name.length > 30) {
+            setModalConfig({
+                isOpen: true,
+                type: 'error',
+                message: 'First name and Last name must be within 30 characters.'
+            });
+            return;
+        }
+
+        // Email Validation
+        if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+            setModalConfig({
+                isOpen: true,
+                type: 'error',
+                message: 'Please enter a valid email address.'
+            });
+            return;
+        }
+
         setLoading(true);
 
         try {
@@ -244,15 +264,23 @@ const ReferralLandingPage = () => {
 
                         <form onSubmit={handleSubmit}>
                             {/* 1. Mobile Number */}
-                            <input
-                                type="tel"
-                                name="mobile"
-                                placeholder="Enter your mobile number *"
-                                className="landing-input"
-                                value={formData.mobile}
-                                onChange={handleInputChange}
-                                required
-                            />
+                            <div className="relative mb-4">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <span className="text-gray-500 font-medium">+91</span>
+                                </div>
+                                <input
+                                    type="tel"
+                                    name="mobile"
+                                    placeholder="Enter your mobile number *"
+                                    className="landing-input !pl-14"
+                                    value={formData.mobile}
+                                    onChange={(e) => {
+                                        const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                                        setFormData({ ...formData, mobile: val });
+                                    }}
+                                    required
+                                />
+                            </div>
 
                             {/* 2. First Name & Last Name */}
                             <div style={{ display: 'flex', gap: '10px' }}>
@@ -263,6 +291,7 @@ const ReferralLandingPage = () => {
                                     className="landing-input"
                                     value={formData.first_name}
                                     onChange={handleInputChange}
+                                    maxLength={30}
                                     required
                                     style={{ flex: 1 }}
                                 />
@@ -273,6 +302,7 @@ const ReferralLandingPage = () => {
                                     className="landing-input"
                                     value={formData.last_name}
                                     onChange={handleInputChange}
+                                    maxLength={30}
                                     required
                                     style={{ flex: 1 }}
                                 />

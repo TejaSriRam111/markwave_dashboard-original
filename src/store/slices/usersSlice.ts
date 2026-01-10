@@ -43,6 +43,32 @@ export const createReferralUser = createAsyncThunk(
     }
 );
 
+export const deactivateRequestOtp = createAsyncThunk(
+    'users/deactivateRequestOtp',
+    async (payload: { mobile: string; channel: string; }, { rejectWithValue }) => {
+        try {
+            const response = await axios.post(API_ENDPOINTS.deactivateRequestOtp(), payload);
+            return response.data;
+        } catch (error: any) {
+            const msg = error?.response?.data?.message || 'Failed to send OTP';
+            return rejectWithValue(msg);
+        }
+    }
+);
+
+export const deactivateConfirm = createAsyncThunk(
+    'users/deactivateConfirm',
+    async (payload: { mobile: string; otp: string }, { rejectWithValue }) => {
+        try {
+            const response = await axios.post(API_ENDPOINTS.deactivateConfirm(), payload);
+            return response.data;
+        } catch (error: any) {
+            const msg = error?.response?.data?.message || 'Failed to deactivate account';
+            return rejectWithValue(msg);
+        }
+    }
+);
+
 export interface UsersState {
     referralUsers: any[];
     existingCustomers: any[];
@@ -51,6 +77,12 @@ export interface UsersState {
     loading: boolean; // Computed loading state
     error: string | null;
     actionLoading: boolean; // For create action
+    deactivation: {
+        loading: boolean;
+        error: string | null;
+        success: boolean;
+        message: string | null;
+    };
 }
 
 const initialState: UsersState = {
@@ -61,6 +93,12 @@ const initialState: UsersState = {
     loading: false,
     error: null,
     actionLoading: false,
+    deactivation: {
+        loading: false,
+        error: null,
+        success: false,
+        message: null,
+    },
 };
 
 const usersSlice = createSlice({
@@ -72,6 +110,14 @@ const usersSlice = createSlice({
         },
         setExistingCustomers: (state, action: PayloadAction<any[]>) => {
             state.existingCustomers = action.payload;
+        },
+        resetDeactivationState: (state) => {
+            state.deactivation = {
+                loading: false,
+                error: null,
+                success: false,
+                message: null,
+            };
         },
     },
     extraReducers: (builder) => {
@@ -121,9 +167,41 @@ const usersSlice = createSlice({
             state.actionLoading = false;
             state.error = action.payload as string;
         });
+
+        // Deactivate Request OTP
+        builder.addCase(deactivateRequestOtp.pending, (state) => {
+            state.deactivation.loading = true;
+            state.deactivation.error = null;
+            state.deactivation.message = null;
+        });
+        builder.addCase(deactivateRequestOtp.fulfilled, (state, action: PayloadAction<any>) => {
+            state.deactivation.loading = false;
+            state.deactivation.success = true;
+            state.deactivation.message = action.payload.message;
+        });
+        builder.addCase(deactivateRequestOtp.rejected, (state, action) => {
+            state.deactivation.loading = false;
+            state.deactivation.error = action.payload as string;
+        });
+
+        // Deactivate Confirm
+        builder.addCase(deactivateConfirm.pending, (state) => {
+            state.deactivation.loading = true;
+            state.deactivation.error = null;
+            state.deactivation.message = null;
+        });
+        builder.addCase(deactivateConfirm.fulfilled, (state, action: PayloadAction<any>) => {
+            state.deactivation.loading = false;
+            state.deactivation.success = true;
+            state.deactivation.message = action.payload.message;
+        });
+        builder.addCase(deactivateConfirm.rejected, (state, action) => {
+            state.deactivation.loading = false;
+            state.deactivation.error = action.payload as string;
+        });
     }
 });
 
-export const { setReferralUsers, setExistingCustomers } = usersSlice.actions;
+export const { setReferralUsers, setExistingCustomers, resetDeactivationState } = usersSlice.actions;
 export const usersReducer = usersSlice.reducer;
 export default usersSlice.reducer;

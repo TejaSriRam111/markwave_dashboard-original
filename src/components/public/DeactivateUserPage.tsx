@@ -1,7 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './DeactivateUserPage.css';
 import { ShieldCheck, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch, RootState } from '../../store';
+import { deactivateRequestOtp, deactivateConfirm, resetDeactivationState } from '../../store/slices/usersSlice';
+
+const Snackbar = ({ message, type }: { message: string; type: 'success' | 'error' }) => {
+    return (
+        <div className={`fixed top-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg text-white font-medium transition-all duration-300 z-50 flex items-center gap-2 ${type === 'success' ? 'bg-green-600' : 'bg-red-600'
+            }`}>
+            {type === 'success' ? (
+                <ShieldCheck size={20} />
+            ) : (
+                <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs">!</div>
+            )}
+            {message}
+        </div>
+    );
+};
 
 const Modal = ({ isOpen, type, message, onClose }: { isOpen: boolean; type: 'success' | 'error'; message: string; onClose: () => void }) => {
     if (!isOpen) return null;
@@ -29,8 +46,10 @@ const Modal = ({ isOpen, type, message, onClose }: { isOpen: boolean; type: 'suc
 };
 
 const DeactivateUserPage = () => {
+    const dispatch = useDispatch<AppDispatch>();
+    const { deactivation } = useSelector((state: RootState) => state.users);
+
     const [step, setStep] = useState<'mobile' | 'otp'>('mobile');
-    const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
         mobile: '',
         first_name: '',
@@ -43,6 +62,27 @@ const DeactivateUserPage = () => {
         type: 'success',
         message: ''
     });
+    const [snackbar, setSnackbar] = useState<{ show: boolean; message: string; type: 'success' | 'error' }>({
+        show: false,
+        message: '',
+        type: 'success'
+    });
+
+    useEffect(() => {
+        return () => {
+            dispatch(resetDeactivationState());
+        };
+    }, [dispatch]);
+
+    useEffect(() => {
+        if (deactivation.error) {
+            setModalConfig({
+                isOpen: true,
+                type: 'error',
+                message: deactivation.error
+            });
+        }
+    }, [deactivation.error]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({
@@ -51,8 +91,10 @@ const DeactivateUserPage = () => {
         });
     };
 
-    const handleMobileSubmit = (e: React.FormEvent) => {
+    const handleMobileSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Mobile Validation
         if (!/^\d{10}$/.test(formData.mobile)) {
             setModalConfig({
                 isOpen: true,
@@ -62,28 +104,88 @@ const DeactivateUserPage = () => {
             return;
         }
 
-        setLoading(true);
-        // Simulate API call to send OTP
-        setTimeout(() => {
-            setLoading(false);
-            setStep('otp');
-            // In real app, trigger send OTP here
-        }, 1000);
+        // Name Validation
+        if (formData.first_name.length > 30 || formData.last_name.length > 30) {
+            setModalConfig({
+                isOpen: true,
+                type: 'error',
+                message: 'First name and Last name must be within 30 characters.'
+            });
+            return;
+        }
+
+        // Email Validation
+        if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+            setModalConfig({
+                isOpen: true,
+                type: 'error',
+                message: 'Please enter a valid email address.'
+            });
+            return;
+        }
+
+        const resultAction = await dispatch(deactivateRequestOtp({
+            mobile: formData.mobile,
+            channel: 'whatsapp',
+
+        }));
+
+        if (deactivateRequestOtp.fulfilled.match(resultAction)) {
+            setSnackbar({
+                show: true,
+                message: resultAction.payload.message || 'OTP sent successfully via whatsapp',
+                type: 'success'
+            });
+
+            // Wait 1 second before navigating to OTP step
+            setTimeout(() => {
+                setSnackbar(prev => ({ ...prev, show: false }));
+                setStep('otp');
+            }, 1000);
+        }
     };
 
-    const handleOtpSubmit = (e: React.FormEvent) => {
+    const handleOtpSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true);
-        // Simulate API call to verify OTP and Deactivate
-        setTimeout(() => {
-            setLoading(false);
+
+        if (!/^\d{6}$/.test(otp)) {
+            setModalConfig({
+                isOpen: true,
+                type: 'error',
+                message: 'Please enter a valid 6-digit OTP.'
+            });
+            return;
+        }
+
+        const resultAction = await dispatch(deactivateConfirm({
+            mobile: formData.mobile,
+            otp: otp
+        }));
+
+        if (deactivateConfirm.fulfilled.match(resultAction)) {
             setModalConfig({
                 isOpen: true,
                 type: 'success',
-                message: 'Account deactivation request submitted successfully.'
+                message: resultAction.payload.message || 'Account deactivated successfully'
             });
-            // Reset or redirect
-        }, 1500);
+            // Optional: Redirect or reset logic here
+        }
+    };
+
+    const handleCloseModal = () => {
+        setModalConfig({ ...modalConfig, isOpen: false });
+        if (modalConfig.type === 'success' && step === 'otp') {
+            // Reset to initial state
+            setStep('mobile');
+            setFormData({
+                mobile: '',
+                first_name: '',
+                last_name: '',
+                email: ''
+            });
+            setOtp('');
+            dispatch(resetDeactivationState());
+        }
     };
 
     return (
@@ -129,15 +231,23 @@ const DeactivateUserPage = () => {
                         {step === 'mobile' ? (
                             <form onSubmit={handleMobileSubmit}>
                                 {/* 1. Mobile Number */}
-                                <input
-                                    type="tel"
-                                    name="mobile"
-                                    placeholder="Enter your registered mobile *"
-                                    className="landing-input"
-                                    value={formData.mobile}
-                                    onChange={handleInputChange}
-                                    required
-                                />
+                                <div className="relative mb-4">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span className="text-gray-500 font-medium">+91</span>
+                                    </div>
+                                    <input
+                                        type="tel"
+                                        name="mobile"
+                                        placeholder="Enter your registered mobile *"
+                                        className="landing-input !pl-14"
+                                        value={formData.mobile}
+                                        onChange={(e) => {
+                                            const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                                            setFormData({ ...formData, mobile: val });
+                                        }}
+                                        required
+                                    />
+                                </div>
 
                                 {/* 2. First Name & Last Name */}
                                 <div style={{ display: 'flex', gap: '10px' }}>
@@ -148,6 +258,7 @@ const DeactivateUserPage = () => {
                                         className="landing-input"
                                         value={formData.first_name}
                                         onChange={handleInputChange}
+                                        maxLength={30}
                                         required
                                         style={{ flex: 1 }}
                                     />
@@ -158,6 +269,7 @@ const DeactivateUserPage = () => {
                                         className="landing-input"
                                         value={formData.last_name}
                                         onChange={handleInputChange}
+                                        maxLength={30}
                                         required
                                         style={{ flex: 1 }}
                                     />
@@ -175,16 +287,16 @@ const DeactivateUserPage = () => {
 
                                 <button
                                     type="submit"
-                                    disabled={loading}
+                                    disabled={deactivation.loading}
                                     className="w-full font-bold py-3 rounded-full transition mt-6 shadow-lg uppercase tracking-wide mb-4 disabled:opacity-70 disabled:cursor-not-allowed referral-btn"
                                 >
-                                    {loading ? 'Sending OTP...' : 'Send OTP'}
+                                    {deactivation.loading ? 'Sending OTP...' : 'Send OTP'}
                                 </button>
                             </form>
                         ) : (
                             <form onSubmit={handleOtpSubmit}>
                                 <div className="text-center mb-4 text-sm text-gray-600">
-                                    OTP sent to <strong>{formData.mobile}</strong>
+                                    OTP sent to <strong>+91 {formData.mobile}</strong>
                                 </div>
                                 <input
                                     type="text"
@@ -192,18 +304,18 @@ const DeactivateUserPage = () => {
                                     placeholder="Enter OTP"
                                     className="landing-input text-center tracking-widest font-bold text-lg"
                                     value={otp}
-                                    onChange={(e) => setOtp(e.target.value)}
+                                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                                     required
                                     maxLength={6}
                                 />
 
                                 <button
                                     type="submit"
-                                    disabled={loading}
+                                    disabled={deactivation.loading}
                                     className="w-full font-bold py-3 rounded-full transition mt-6 shadow-lg uppercase tracking-wide mb-4 disabled:opacity-70 disabled:cursor-not-allowed referral-btn"
                                     style={{ backgroundColor: '#ef4444' }} // Red for danger action
                                 >
-                                    {loading ? 'Processing...' : 'Deactivate Account'}
+                                    {deactivation.loading ? 'Processing...' : 'Deactivate Account'}
                                 </button>
 
                                 <button
@@ -223,11 +335,13 @@ const DeactivateUserPage = () => {
                 </div>
             </section>
 
+            {snackbar.show && <Snackbar message={snackbar.message} type={snackbar.type} />}
+
             <Modal
                 isOpen={modalConfig.isOpen}
                 type={modalConfig.type}
                 message={modalConfig.message}
-                onClose={() => setModalConfig({ ...modalConfig, isOpen: false })}
+                onClose={handleCloseModal}
             />
         </div>
     );
