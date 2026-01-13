@@ -455,7 +455,14 @@ export const EmiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 const birthAbsolute = buffalo.birthYear * 12 + (buffalo.birthMonth !== undefined ? buffalo.birthMonth : (buffalo.acquisitionMonth || 0));
                 if (birthAbsolute <= absoluteEndMonth) {
                     const ageInMonths = calculateAgeInMonths(buffalo, endYear, targetMonth);
-                    totalAssetValue += getValuationForAge(ageInMonths);
+                    let val = getValuationForAge(ageInMonths);
+
+                    // Logic matching CostEstimationTable: 0-12 months value is 0 in the first year
+                    if (targetYearIndex === 1 && ageInMonths <= 12) {
+                        val = 0;
+                    }
+
+                    totalAssetValue += val;
                 }
             }
         });
