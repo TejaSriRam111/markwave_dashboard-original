@@ -14,6 +14,9 @@ import BuffaloVisualizationTab from './components/sidebar-tabs/BuffaloVisualizat
 import EmiCalculatorTab from './components/sidebar-tabs/EmiCalculatorTab';
 import AcfCalculatorTab from './components/sidebar-tabs/AcfCalculatorTab';
 
+// FarmVest Components
+// (Moved below all static imports)
+
 // Public Pages
 import ReferralLandingPage from './components/public/ReferralLandingPage';
 import DeactivateUserPage from './components/public/DeactivateUserPage';
@@ -31,6 +34,10 @@ import UsersPageSkeleton from './components/common/skeletons/UsersPageSkeleton';
 import ProductsPageSkeleton from './components/common/skeletons/ProductsPageSkeleton';
 import BuffaloVizSkeleton from './components/common/skeletons/BuffaloVizSkeleton';
 import EmiCalculatorSkeleton from './components/common/skeletons/EmiCalculatorSkeleton';
+
+// FarmVest Components (Lazy Loaded)
+const FarmVestEmployees = React.lazy(() => import('./FarmvestComponents/Employees'));
+const FarmVestFarms = React.lazy(() => import('./FarmvestComponents/Farms'));
 
 interface Session {
   mobile: string;
@@ -248,6 +255,23 @@ function App() {
           <ConditionalLayoutWrapper>
             <DeactivateUserPage />
           </ConditionalLayoutWrapper>
+        } />
+
+        {/* FarmVest Routes */}
+        <Route path="/farmvest/employees" element={
+          <ProtectedRoute>
+            <React.Suspense fallback={<UsersPageSkeleton />}>
+              <FarmVestEmployees />
+            </React.Suspense>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/farmvest/farms" element={
+          <ProtectedRoute>
+            <React.Suspense fallback={<OrdersPageSkeleton />}>
+              <FarmVestFarms />
+            </React.Suspense>
+          </ProtectedRoute>
         } />
 
         {/* Backward Compatibility Redirects */}
