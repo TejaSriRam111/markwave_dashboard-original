@@ -623,37 +623,22 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
                   </button>
                 </li>
 
-            {/* Unit Calculator */}
-            <li>
-              <button
-                className={`nav-item ${activeTab === 'unit-calculator' ? 'active-main' : ''}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate('/unit-calculator', { state: { fromDashboard: true } });
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
-                  <Calculator size={18} />
-                  <span className="nav-text">Unit Calculator</span>
-                </div>
-              </button>
-            </li>
+                {/* Unit Calculator */}
+                <li>
+                  <button
+                    className={`nav-item ${activeTab === 'unit-calculator' ? 'active-main' : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate('/unit-calculator', { state: { fromDashboard: true } });
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                      <Calculator size={18} />
+                      <span className="nav-text">Unit Calculator</span>
+                    </div>
+                  </button>
+                </li>
 
-            {/* EMI Calculator */}
-            <li>
-              <button
-                className={`nav-item ${activeTab === 'emi' ? 'active-main' : ''}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate('/emi-calculator', { state: { fromDashboard: true } });
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
-                  <Calculator size={18} />
-                  <span className="nav-text">EMI Calculator</span>
-                </div>
-              </button>
-            </li>
                 {/* EMI Calculator */}
                 <li>
                   <button
@@ -669,6 +654,21 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
                     </div>
                   </button>
                 </li>
+                {/* EMI Calculator
+                <li>
+                  <button
+                    className={`nav-item ${activeTab === 'emi' ? 'active-main' : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate('/emi-calculator', { state: { fromDashboard: true } });
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                      <Calculator size={18} />
+                      <span className="nav-text">EMI Calculator</span>
+                    </div>
+                  </button>
+                </li> */}
 
                 {/* ACF Calculator */}
                 <li>
