@@ -640,7 +640,16 @@ const MonthlyRevenueBreak = ({
                                                         {formatCurrency(unitTotal)}
                                                     </td>
                                                     <td className={`sticky right-[5rem] z-10 px-2 py-3 text-center font-medium text-amber-600 border-l border-slate-200 ${mIndex % 2 === 0 ? 'bg-amber-50' : 'bg-amber-100'}`}>
-                                                        {formatCurrency(monthlyCpfValue)}
+                                                        {monthlyCpfValue > 0 ? (
+                                                            (treeData.units || 1) > 1 ? (
+                                                                <div className="flex flex-col items-center leading-none">
+                                                                    <span className="text-[10px] text-amber-700/70">{formatCurrency(monthlyCpfValue / (treeData.units || 1))} × {(treeData.units || 1)}</span>
+                                                                    <span className="font-bold text-amber-700 border-t border-amber-300 mt-0.5 pt-0.5">{formatCurrency(monthlyCpfValue)}</span>
+                                                                </div>
+                                                            ) : (
+                                                                formatCurrency(monthlyCpfValue)
+                                                            )
+                                                        ) : "-"}
                                                     </td>
                                                     <td className={`sticky right-0 z-10 px-2 py-3 text-center font-bold border-l border-slate-200 ${netRevenue >= 0 ? (mIndex % 2 === 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-emerald-100 text-emerald-600') : (mIndex % 2 === 0 ? 'bg-rose-50 text-rose-600' : 'bg-rose-100 text-rose-600')}`}>
                                                         {formatCurrency(netRevenue)}

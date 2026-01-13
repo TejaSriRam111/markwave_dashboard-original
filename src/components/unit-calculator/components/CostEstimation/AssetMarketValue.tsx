@@ -77,10 +77,10 @@ const AssetMarketValue = ({
         };
 
         let totalValue = 0;
+        let motherCount = 0;
+        let calfCount = 0;
         let totalCount = 0;
 
-        // Calculate Simulation Year End (Absolute Month)
-        // startMonth is 0-indexed (Jan=0, Feb=1)
         // Calculate Simulation Year End (Absolute Month)
         // startMonth is 0-indexed (Jan=0, Feb=1)
         const absoluteStart = treeData.startYear * 12 + (treeData.startMonth || 0);
@@ -123,6 +123,12 @@ const AssetMarketValue = ({
                 // We use treeData.units multiplier as buffaloDetails represents the base unit template.
                 const multiplier = treeData.units || 1;
 
+                if (ageInMonths >= 24) {
+                    motherCount += multiplier;
+                } else {
+                    calfCount += multiplier;
+                }
+
                 if (ageInMonths >= 41) {
                     ageGroups['41+ months'].count += multiplier;
                     ageGroups['41+ months'].value += appliedValue * multiplier;
@@ -148,7 +154,7 @@ const AssetMarketValue = ({
             }
         });
 
-        return { ageGroups, totalValue, totalCount };
+        return { ageGroups, totalValue, totalCount, motherCount, calfCount };
     };
 
     // Helper function to get category count from asset data
@@ -206,7 +212,7 @@ const AssetMarketValue = ({
             <div className="w-full mb-8 space-y-4">
 
                 {/* 1. Value Summary Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-w-2xl">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 max-w-4xl">
                     <div className="bg-white rounded-md p-2 border border-slate-200 shadow-sm flex flex-col justify-between items-center text-center">
                         <div>
                             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Total Asset Value</p>
@@ -217,10 +223,18 @@ const AssetMarketValue = ({
 
                     <div className="bg-white rounded-md p-2 border border-slate-200 shadow-sm flex flex-col justify-between items-center text-center">
                         <div>
-                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Total Headcount</p>
-                            <h3 className="text-base font-bold text-indigo-600 mt-0.5">{detailedValue.totalCount}</h3>
+                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Mother Buffaloes</p>
+                            <h3 className="text-base font-bold text-indigo-600 mt-0.5">{detailedValue.motherCount}</h3>
                         </div>
-                        <p className="text-[9px] text-slate-400 mt-1">Buffaloes</p>
+                        {/* <p className="text-[9px] text-slate-400 mt-1">Age &ge; 24 months</p> */}
+                    </div>
+
+                    <div className="bg-white rounded-md p-2 border border-slate-200 shadow-sm flex flex-col justify-between items-center text-center">
+                        <div>
+                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Calves</p>
+                            <h3 className="text-base font-bold text-emerald-600 mt-0.5">{detailedValue.calfCount}</h3>
+                        </div>
+                        {/* <p className="text-[9px] text-slate-400 mt-1">Age &lt; 24 months</p> */}
                     </div>
                 </div>
 

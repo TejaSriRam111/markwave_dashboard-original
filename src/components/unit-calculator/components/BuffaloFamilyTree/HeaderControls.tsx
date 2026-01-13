@@ -134,6 +134,7 @@ const HeaderControls = ({
                                             setStartYear(date.getFullYear());
                                             setStartMonth(date.getMonth());
                                             setStartDay(1);
+                                            setDurationMonths(120); // Reset to 10 years logic
                                         }
                                     }}
                                     minDate={new Date(2026, 0, 1)}
@@ -167,13 +168,13 @@ const HeaderControls = ({
                                             let newDuration = ((selectedYear - startYear) * 12) + (selectedMonth - startMonth) + 1;
 
                                             // Constants
-                                            const MIN_DURATION = 1;
+                                            const MIN_DURATION = 37; // 3 years locking (Earliest exit Jan 2029)
                                             const MAX_DURATION = 120; // 10 years
 
                                             setDurationMonths(Math.max(MIN_DURATION, Math.min(MAX_DURATION, newDuration)));
                                         }
                                     }}
-                                    minDate={new Date(startYear, startMonth)}
+                                    minDate={new Date(startYear, startMonth + 36)} // 3 years locking (Starts from 37th month)
                                     maxDate={new Date(startYear, startMonth + 119)} // 10 years - 1 month
                                     showMonthYearPicker
                                     dateFormat="MMM yyyy"
