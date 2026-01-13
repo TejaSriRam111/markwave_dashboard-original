@@ -121,7 +121,7 @@ const HeaderControls = ({
                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Years</span>
                             <input
                                 type="number"
-                                min="1"
+                                min="4"
                                 max="10"
                                 className="w-12 bg-white/50 border border-slate-200 rounded px-1 text-sm font-semibold text-slate-700 text-center focus:outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 transition-all"
                                 value={years || ''}
@@ -134,12 +134,12 @@ const HeaderControls = ({
                                         if (!isNaN(num)) {
                                             // Clamp between 1-10
                                             if (num > 10) num = 10;
-                                            if (num < 1) num = 1;
+                                            if (num < 4) num = 4;
                                             setYears(num);
                                         }
                                     }
                                 }}
-                                placeholder="1-10"
+                                placeholder="4-10"
                             />
                         </div>
                     </div>
