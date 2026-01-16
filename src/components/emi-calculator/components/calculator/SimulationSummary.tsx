@@ -125,7 +125,7 @@ const SimulationSummary = () => {
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
                 <GenericCard
                     label="Revenue (0-60 Months)"
-                    value={totalRevenue - totalPayment - totalCpf - totalCgf}
+                    value={totalRevenue}
                     colorClass="bg-[#E8F5E9] text-[#2E7D32]" // Green
                     borderClass="border-[#A5D6A7]"
                     shadowClass="shadow-[0_4px_15px_rgb(46,125,50,0.1)]"
@@ -136,10 +136,10 @@ const SimulationSummary = () => {
                     label={
                         <div className="flex flex-col">
                             <span>Total Payment</span>
-                            <span className="text-[10px] sm:text-[11px] font-medium opacity-90 leading-tight">(EMI+CPF+CGF)</span>
+                            <span className="text-[10px] sm:text-[11px] font-medium opacity-90 leading-tight">(EMI+CPF)</span>
                         </div>
                     }
-                    value={totalPayment + totalCpf + totalCgf}
+                    value={totalPayment + totalCpf}
                     colorClass="bg-[#FFF3E0] text-[#EF6C00]" // Orange
                     borderClass="border-[#FFE0B2]"
                     shadowClass="shadow-[0_4px_15px_rgb(239,108,0,0.1)]"
@@ -164,7 +164,7 @@ const SimulationSummary = () => {
                     icon={PawPrint}
                     iconColorClass="text-[#FBC02D]"
                 />
-                <GenericCard
+                {/* <GenericCard
                     label="CGF (0-60 Months)"
                     value={displayCgf}
                     colorClass="bg-[#EFEBE9] text-[#5D4037]" // Brown
@@ -172,7 +172,7 @@ const SimulationSummary = () => {
                     shadowClass="shadow-[0_4px_15px_rgb(93,64,55,0.1)]"
                     icon={Sprout}
                     iconColorClass="text-[#5D4037]"
-                />
+                /> */}
                 <GenericCard
                     label="Total Profit"
                     value={totalProfit}
@@ -216,7 +216,7 @@ const SimulationSummary = () => {
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
                 <GenericCard
                     label="Revenue (61-120 Months)"
-                    value={totalRevenueLongTerm - totalCpfLongTerm - totalCgfLongTerm}
+                    value={totalNetCashLongTerm}
                     colorClass="bg-[#E8F5E9] text-[#2E7D32]"
                     borderClass="border-[#A5D6A7]"
                     shadowClass="shadow-[0_4px_15px_rgb(46,125,50,0.1)]"
@@ -232,7 +232,7 @@ const SimulationSummary = () => {
                     icon={PawPrint}
                     iconColorClass="text-[#FBC02D]"
                 />
-                <GenericCard
+                {/* <GenericCard
                     label="CGF (61-120 Months)"
                     value={!cgfEnabled ? 0 : totalCgfLongTerm}
                     colorClass="bg-[#EFEBE9] text-[#5D4037]"
@@ -240,7 +240,7 @@ const SimulationSummary = () => {
                     shadowClass="shadow-[0_4px_15px_rgb(93,64,55,0.1)]"
                     icon={Sprout}
                     iconColorClass="text-[#5D4037]"
-                />
+                /> */}
 
                 <GenericCard
                     label="Asset Value (61-120 Months)"
@@ -258,7 +258,7 @@ const SimulationSummary = () => {
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
                 <GenericCard
                     label="10 Years Total Revenue"
-                    value={(totalRevenue - totalPayment - totalCpf - totalCgf) + (totalRevenueLongTerm - totalCpfLongTerm - totalCgfLongTerm)}
+                    value={totalProfit + totalNetCashLongTerm}
                     colorClass="bg-[#E8F5E9] text-[#2E7D32]"
                     borderClass="border-[#A5D6A7]"
                     shadowClass="shadow-[0_4px_15px_rgb(46,125,50,0.1)]"

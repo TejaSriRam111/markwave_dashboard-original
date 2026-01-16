@@ -25,7 +25,7 @@ const AmortizationTable = () => {
                 [isYearly ? 'Year' : 'Month']: row.month,
                 'EMI (Monthly)': row.emi,
                 'CPF (Monthly)': row.cpf,
-                'CGF (Monthly)': row.cgf,
+                // 'CGF (Monthly)': row.cgf,
                 'Revenue': row.revenue,
                 'Payment': row.totalPayment,
                 'Debit From Balance': row.debitFromBalance,
@@ -93,7 +93,7 @@ const AmortizationTable = () => {
                                 <th className="px-4 py-4 border-r border-gray-300 text-center">{isYearly ? 'Year' : 'Month'}</th>
                                 <th className="px-4 py-4 border-r border-gray-300 text-center whitespace-nowrap">EMI (Monthly)</th>
                                 <th className="px-4 py-4 border-r border-gray-300 text-center whitespace-nowrap">CPF (Monthly)</th>
-                                <th className="px-4 py-4 border-r border-gray-300 text-center whitespace-nowrap">CGF (Monthly)</th>
+                                {/* <th className="px-4 py-4 border-r border-gray-300 text-center whitespace-nowrap">CGF (Monthly)</th> */}
                                 <th className="px-4 py-4 border-r border-gray-300 text-center whitespace-nowrap">Revenue</th>
                                 <th className="px-4 py-4 border-r border-gray-300 text-center whitespace-nowrap">Payment</th>
                                 <th className="px-4 py-4 border-r border-gray-300 text-center whitespace-nowrap leading-tight">Debit From<br />Balance</th>
@@ -114,7 +114,7 @@ const AmortizationTable = () => {
                                         <td className="px-4 py-3 border-r border-gray-200 text-center text-sm font-bold text-gray-800">{row.month}</td>
                                         <td className="px-4 py-3 border-r border-gray-200 text-center text-sm font-medium text-gray-600">{formatCurrency(row.emi)}</td>
                                         <td className="px-4 py-3 border-r border-gray-200 text-center text-sm font-medium text-gray-600">{formatCurrency(row.cpf)}</td>
-                                        <td className="px-4 py-3 border-r border-gray-200 text-center text-sm font-medium text-gray-600">{formatCurrency(row.cgf)}</td>
+                                        {/* <td className="px-4 py-3 border-r border-gray-200 text-center text-sm font-medium text-gray-600">{formatCurrency(row.cgf)}</td> */}
                                         <td className="px-4 py-3 border-r border-gray-200 text-center text-sm font-medium text-gray-600">{formatCurrency(row.revenue)}</td>
                                         <td className="px-4 py-3 border-r border-gray-200 text-center text-sm font-bold text-gray-700">{formatCurrency(row.totalPayment)}</td>
                                         <td className="px-4 py-3 border-r border-gray-200 text-center text-sm font-medium text-gray-600">{formatCurrency(row.debitFromBalance)}</td>

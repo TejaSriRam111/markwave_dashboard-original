@@ -7,8 +7,10 @@ export const FARMVEST_API_CONFIG = {
         // Only use CORS proxy in local development
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
             return productionUrl;
+        } else {
+            const corsUrl = process.env.REACT_APP_CORS_URL || 'https://cors-612299373064.asia-south1.run.app';
+            return `${corsUrl}/${productionUrl}`;
         }
-        return productionUrl;
     },
     getApiKey: () => process.env.REACT_APP_FARMVEST_API_KEY || 'bWFya3dhdmUtZmFybXZlc3QtdGVzdHRpbmctYXBpa2V5'
 };

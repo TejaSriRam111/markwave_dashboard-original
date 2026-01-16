@@ -101,7 +101,7 @@ export const EmiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     // Simulation Core
     // Generates the schedule array
-    const simulateConfig = useCallback((pAmount: number, pRate: number, pMonths: number, pUnits: number, pCpf: boolean, pCgf: boolean) => {
+    const simulateConfig = useCallback((pAmount: number, pRate: number, pLoanMonths: number, pSimMonths: number, pUnits: number, pCpf: boolean, pCgf: boolean) => {
 
         const principal = pAmount;
         const monthlyRate = pRate / 12 / 100;
@@ -110,11 +110,13 @@ export const EmiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const effectiveUnits = pUnits > 0 ? pUnits : 1;
 
         let emiLocal = 0;
-        if (monthlyRate === 0) {
-            emiLocal = principal / (pMonths > 0 ? pMonths : 1);
-        } else {
-            const powFactor = Math.pow(1 + monthlyRate, pMonths);
-            emiLocal = (principal * monthlyRate * powFactor) / (powFactor - 1);
+        if (pLoanMonths > 0) {
+            if (monthlyRate === 0) {
+                emiLocal = principal / pLoanMonths;
+            } else {
+                const powFactor = Math.pow(1 + monthlyRate, pLoanMonths);
+                emiLocal = (principal * monthlyRate * powFactor) / (powFactor - 1);
+            }
         }
 
         let balance = principal;
@@ -141,53 +143,53 @@ export const EmiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
         // Helper to track births
         const trackBirths = (firstBirthMonth: number) => {
-            for (let bm = firstBirthMonth; bm <= pMonths; bm += 12) {
+            for (let bm = firstBirthMonth; bm <= pSimMonths; bm += 12) {
                 allBirthMonths.push(bm);
 
                 // CPF Start (Direct)
                 const cpfStart = bm + 24;
-                if (cpfStart <= pMonths) calfCpfStartMonths.push(cpfStart);
+                if (cpfStart <= pSimMonths) calfCpfStartMonths.push(cpfStart);
 
                 // Revenue Start (Direct)
                 const revStart = bm + 32;
-                if (revStart <= pMonths) calfRevenueStartMonths.push(revStart);
+                if (revStart <= pSimMonths) calfRevenueStartMonths.push(revStart);
 
                 // Grand Births (Gen 2)
                 const firstGrandBaby = bm + 32;
-                if (firstGrandBaby <= pMonths) {
-                    for (let gb = firstGrandBaby; gb <= pMonths; gb += 12) {
+                if (firstGrandBaby <= pSimMonths) {
+                    for (let gb = firstGrandBaby; gb <= pSimMonths; gb += 12) {
                         allBirthMonths.push(gb);
 
                         // CPF Start (Grand)
                         const cpfStartGrand = gb + 24;
-                        if (cpfStartGrand <= pMonths) calfCpfStartMonths.push(cpfStartGrand);
+                        if (cpfStartGrand <= pSimMonths) calfCpfStartMonths.push(cpfStartGrand);
 
                         // Revenue Start (Grand)
                         const revStartGrand = gb + 32;
-                        if (revStartGrand <= pMonths) calfRevenueStartMonths.push(revStartGrand);
+                        if (revStartGrand <= pSimMonths) calfRevenueStartMonths.push(revStartGrand);
 
                         // Gen 3 (Great Grand)
                         const firstGreatGrand = gb + 32;
-                        if (firstGreatGrand <= pMonths) {
-                            for (let ggb = firstGreatGrand; ggb <= pMonths; ggb += 12) {
+                        if (firstGreatGrand <= pSimMonths) {
+                            for (let ggb = firstGreatGrand; ggb <= pSimMonths; ggb += 12) {
                                 allBirthMonths.push(ggb);
 
                                 const cpfStartGGB = ggb + 24;
-                                if (cpfStartGGB <= pMonths) calfCpfStartMonths.push(cpfStartGGB);
+                                if (cpfStartGGB <= pSimMonths) calfCpfStartMonths.push(cpfStartGGB);
 
                                 const revStartGGB = ggb + 32;
-                                if (revStartGGB <= pMonths) calfRevenueStartMonths.push(revStartGGB);
+                                if (revStartGGB <= pSimMonths) calfRevenueStartMonths.push(revStartGGB);
 
                                 // Gen 4 (Great Great Grand) - Just in case for 120 months
                                 const firstGen4 = ggb + 32;
-                                if (firstGen4 <= pMonths) {
-                                    for (let g4 = firstGen4; g4 <= pMonths; g4 += 12) {
+                                if (firstGen4 <= pSimMonths) {
+                                    for (let g4 = firstGen4; g4 <= pSimMonths; g4 += 12) {
                                         allBirthMonths.push(g4);
                                         const cpfStartG4 = g4 + 24;
-                                        if (cpfStartG4 <= pMonths) calfCpfStartMonths.push(cpfStartG4);
+                                        if (cpfStartG4 <= pSimMonths) calfCpfStartMonths.push(cpfStartG4);
                                         // Revenue gen 4
                                         const revStartG4 = g4 + 32;
-                                        if (revStartG4 <= pMonths) calfRevenueStartMonths.push(revStartG4);
+                                        if (revStartG4 <= pSimMonths) calfRevenueStartMonths.push(revStartG4);
                                     }
                                 }
                             }
@@ -202,26 +204,31 @@ export const EmiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
         const monthlyCpfPerAnimal = CPF_PER_UNIT_YEARLY / 12;
 
-        for (let m = 1; m <= pMonths; m++) {
+        for (let m = 1; m <= pSimMonths; m++) {
+            // EMI applies only within pLoanMonths
+            const currentEmi = m <= pLoanMonths ? emiLocal : 0;
+
             const interestForMonth = balance * monthlyRate;
-            let principalForMonth = emiLocal - interestForMonth;
+            let principalForMonth = 0;
 
-            if (m === pMonths) principalForMonth = balance; // Close loan
-            if (principalForMonth < 0) principalForMonth = 0;
-
-            balance -= principalForMonth;
-            if (balance < 0.000001) balance = 0;
+            if (m <= pLoanMonths) {
+                principalForMonth = currentEmi - interestForMonth;
+                if (m === pLoanMonths) principalForMonth = balance; // Close loan
+                if (principalForMonth < 0) principalForMonth = 0;
+                balance -= principalForMonth;
+                if (balance < 0.000001) balance = 0;
+            }
 
             // CGF
             let cgfPerUnit = 0;
-            if (pCgf) {
+            /* if (pCgf) {
                 for (const birthMonth of allBirthMonths) {
                     if (m >= birthMonth) {
                         const currentAge = (m - birthMonth) + 1;
                         cgfPerUnit += getMonthlyCgfForCalfAge(currentAge);
                     }
                 }
-            }
+            } */
             const cgf = cgfPerUnit * effectiveUnits;
 
             // Revenue
@@ -251,11 +258,11 @@ export const EmiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             }
 
             // Payments Logic: Try to pay from Revenue -> Then Loan Pool -> Then Loss (Pocket)
-            let emiFromRevenue = revenue >= emiLocal ? emiLocal : revenue;
+            let emiFromRevenue = revenue >= currentEmi ? currentEmi : revenue;
             let remainingRevenue = revenue - emiFromRevenue;
             let emiFromLoanPool = 0;
 
-            let remainingEmi = emiLocal - emiFromRevenue;
+            let remainingEmi = currentEmi - emiFromRevenue;
             if (remainingEmi > 0 && loanPool > 0) {
                 const take = remainingEmi <= loanPool ? remainingEmi : loanPool;
                 emiFromLoanPool = take;
@@ -306,7 +313,7 @@ export const EmiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
             rows.push({
                 month: m,
-                emi: emiLocal,
+                emi: currentEmi,
                 interest: interestForMonth,
                 principal: principalForMonth,
                 balance: balance,
@@ -323,7 +330,7 @@ export const EmiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 profit,
                 loss,
                 // Add aliases for easier table matching
-                totalPayment: emiLocal + cpf + cgf,
+                totalPayment: currentEmi + cpf + cgf,
                 debitFromBalance: emiFromLoanPool + cpfFromLoanPool + cgfFromLoanPool,
                 netCash: profit - loss
             });
@@ -531,7 +538,7 @@ export const EmiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     // --- Effects to Update State ---
     useEffect(() => {
         // 1. Regular Simulation (User defined months, usually 60)
-        const { rows, emi: calcEmi } = simulateConfig(amount, rate, months, units, cpfEnabled, cgfEnabled);
+        const { rows, emi: calcEmi } = simulateConfig(amount, rate, months, months, units, cpfEnabled, cgfEnabled);
 
         setEmi(calcEmi);
         setSchedule(rows);
@@ -540,22 +547,30 @@ export const EmiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const tRev = rows.reduce((acc: number, r: EmiRow) => acc + r.revenue, 0);
         const tCpf = rows.reduce((acc: number, r: EmiRow) => acc + r.cpf, 0);
         const tCgf = rows.reduce((acc: number, r: EmiRow) => acc + r.cgf, 0);
-        const tProfit = rows.reduce((acc: number, r: EmiRow) => acc + r.profit, 0);
         const tLoss = rows.reduce((acc: number, r: EmiRow) => acc + r.loss, 0);
+
+        // Correct Total Interest calculation
+        const tInt = rows.reduce((acc: number, r: EmiRow) => acc + r.interest, 0);
+        setTotalInterest(tInt);
+
+        // Correct Cash Flow Logic:
+        // Previous logic summed monthly "profit" (surplus) even if that surplus was later consumed by deficits via the Loan Pool.
+        // True Net Cash = Total Revenue - Total Outflows (EMI + CPF + CGF)
+        const tPayment = calcEmi * months;
+        const totalOutflows = tPayment + tCpf + tCgf;
+        const realNetCash = tRev - totalOutflows;
 
         setTotalRevenue(tRev);
         setTotalCpf(tCpf);
         setTotalCgf(tCgf);
-        setTotalProfit(tProfit);
-        setTotalLoss(tLoss);
-        setTotalNetCash(tProfit - tLoss);
-        setTotalPayment(calcEmi * months);
-        // const tInt = rows.reduce((acc: number, r: EmiRow) => acc + r.interest, 0);
-        // Correct Total Interest calculation: Total Payment - Principal Amount
-        // BUT wait, emi * months could be slightly different due to rounding or last installment logic
-        // Let's use the sum of interest column for accuracy
-        const tInt = rows.reduce((acc: number, r: EmiRow) => acc + r.interest, 0);
-        setTotalInterest(tInt);
+        setTotalPayment(tPayment);
+
+        setTotalLoss(tLoss); // "From Pocket" remains correct (sum of required injections)
+        setTotalNetCash(realNetCash);
+
+        // Total Profit should reflect the final Net Gain. If negative, it's 0 (or we could show negative).
+        // Giving the user "Total Profit" usually implies the positive outcome.
+        setTotalProfit(realNetCash > 0 ? realNetCash : 0);
 
         // Asset Value (Regular)
         const herdAges = simulateHerd(months, units);
@@ -572,7 +587,7 @@ export const EmiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         // If we want purely "Revenue/CPF/Asset" for 61-120, we can run a 120 month sim.
 
         const longTermMonths = 120; // 10 Years
-        const { rows: longrows } = simulateConfig(amount, rate, longTermMonths, units, cpfEnabled, cgfEnabled);
+        const { rows: longrows } = simulateConfig(amount, rate, months, longTermMonths, units, cpfEnabled, cgfEnabled);
 
         // Filter for months 61 to 120
         const futureRows = longrows.filter(r => r.month > 60 && r.month <= 120);

@@ -268,11 +268,11 @@ const BarChartWidget: React.FC<BarChartWidgetProps> = ({ months, emi, yearlySche
                                 CPF : <span className="font-mono">₹{formatCurrency(data.cpf)}</span>
                             </p>
                         )}
-                        {data.cgf > 0 && (
+                        {/* {data.cgf > 0 && (
                             <p className="text-xs font-semibold text-gray-600">
                                 CGF : <span className="font-mono">₹{formatCurrency(data.cgf)}</span>
                             </p>
-                        )}
+                        )} */}
                     </div>
                 </div>
             );

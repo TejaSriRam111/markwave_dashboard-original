@@ -107,7 +107,7 @@ const InputCard = () => {
                     </div>
                 </div>
 
-                <div className="bg-white rounded-2xl p-2 lg:p-1.5 border border-gray-100 shadow-sm">
+                {/* <div className="bg-white rounded-2xl p-2 lg:p-1.5 border border-gray-100 shadow-sm">
                     <div className="flex items-center justify-between mb-0.5">
                         <div className="space-y-0">
                             <p className="text-xs lg:text-[11px] font-bold text-gray-700">CGF</p>
@@ -124,7 +124,7 @@ const InputCard = () => {
                             <div className="w-12 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-6 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#f59e0b]"></div>
                         </label>
                     </div>
-                </div>
+                </div> */}
             </div>
 
             {/* Calculation Info Box */}

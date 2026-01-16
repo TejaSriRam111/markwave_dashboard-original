@@ -384,6 +384,13 @@
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   }
 
+  .switch-btn.disabled-switch {
+    opacity: 0.4;
+    cursor: not-allowed;
+    filter: grayscale(1);
+    pointer-events: none;
+  }
+
   /* Header Right Section */
   .header-right {
     display: flex;

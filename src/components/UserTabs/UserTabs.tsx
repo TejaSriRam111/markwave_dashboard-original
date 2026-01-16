@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import './UserTabs.css';
 import axios from 'axios';
 import { API_ENDPOINTS } from '../../config/api';
-import { LayoutDashboard, Users, TreePine, ShoppingBag, LogOut, UserCheck, Menu, X, Calculator, MonitorPlay, Shield as ShieldIcon, LifeBuoy, UserMinus } from 'lucide-react';
+import { LayoutDashboard, Users, TreePine, ShoppingBag, LogOut, UserCheck, Menu, X, Calculator, MonitorPlay, Shield as ShieldIcon, LifeBuoy, UserMinus, Mail } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import type { RootState } from '../../store';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -57,6 +57,8 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   const [currentDashboard, setCurrentDashboard] = useState<'animalkart' | 'farmvest'>(() => {
+    if (adminRole === 'Farmvest admin') return 'farmvest';
+    if (adminRole === 'Animalkart admin') return 'animalkart';
     if (location.pathname.startsWith('/farmvest')) return 'farmvest';
     return 'animalkart';
   });
@@ -102,6 +104,7 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
   else if (currentPath.includes('/unit-calculator')) activeTab = 'unit-calculator';
   else if (currentPath.includes('/farmvest/employees')) activeTab = 'farmvest-employees';
   else if (currentPath.includes('/farmvest/farms')) activeTab = 'farmvest-farms';
+  else if (currentPath.includes('/support-tickets')) activeTab = 'support-tickets';
 
   const handleChoiceSelection = useCallback((type: 'investor' | 'referral') => {
     setFormData(prev => ({
@@ -292,10 +295,30 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
 
           <div className="header-center-title">
             <div className="dashboard-switcher">
-              <button className={`switch-btn ${currentDashboard === 'animalkart' ? 'active' : ''}`} onClick={() => { setCurrentDashboard('animalkart'); navigate('/orders'); }}>
+              <button
+                className={`switch-btn ${currentDashboard === 'animalkart' ? 'active' : ''} ${adminRole === 'Farmvest admin' ? 'disabled-switch' : ''}`}
+                onClick={() => {
+                  if (adminRole !== 'Farmvest admin') {
+                    setCurrentDashboard('animalkart');
+                    navigate('/orders');
+                  }
+                }}
+                disabled={adminRole === 'Farmvest admin'}
+                title={adminRole === 'Farmvest admin' ? "Access restricted to Farmvest Dashboard" : ""}
+              >
                 Animalkart Dashboard
               </button>
-              <button className={`switch-btn ${currentDashboard === 'farmvest' ? 'active' : ''}`} onClick={() => { setCurrentDashboard('farmvest'); navigate('/farmvest/employees'); }}>
+              <button
+                className={`switch-btn ${currentDashboard === 'farmvest' ? 'active' : ''} ${adminRole === 'Animalkart admin' ? 'disabled-switch' : ''}`}
+                onClick={() => {
+                  if (adminRole !== 'Animalkart admin') {
+                    setCurrentDashboard('farmvest');
+                    navigate('/farmvest/employees');
+                  }
+                }}
+                disabled={adminRole === 'Animalkart admin'}
+                title={adminRole === 'Animalkart admin' ? "Access restricted to Animalkart Dashboard" : ""}
+              >
                 FarmVest Dashboard
               </button>
             </div>
@@ -423,6 +446,14 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
                     </div>
                   </button>
                 </li>
+                <li>
+                  <button className={`nav-item ${activeTab === 'support-tickets' ? 'active-main' : ''}`} onClick={(e) => { e.stopPropagation(); navigate('/support-tickets'); }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                      <Mail size={18} />
+                      <span className="nav-text">Support Ticket</span>
+                    </div>
+                  </button>
+                </li>
               </>
             ) : (
               <>
@@ -439,6 +470,14 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
                       <TreePine size={18} />
                       <span className="nav-text">Farms</span>
+                    </div>
+                  </button>
+                </li>
+                <li>
+                  <button className={`nav-item ${activeTab === 'support-tickets' ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); navigate('/support-tickets'); }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                      <Mail size={18} />
+                      <span className="nav-text">Support Ticket</span>
                     </div>
                   </button>
                 </li>

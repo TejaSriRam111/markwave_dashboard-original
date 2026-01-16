@@ -14,6 +14,7 @@ import BuffaloVisualizationTab from './components/sidebar-tabs/BuffaloVisualizat
 import EmiCalculatorTab from './components/sidebar-tabs/EmiCalculatorTab';
 import AcfCalculatorTab from './components/sidebar-tabs/AcfCalculatorTab';
 import UnitCalculatorTab from './components/sidebar-tabs/UnitCalculatorTab';
+import SupportTicketsTab from './components/sidebar-tabs/SupportTicketsTab';
 
 // FarmVest Components
 // (Moved below all static imports)
@@ -109,9 +110,19 @@ function App() {
       presentLogin: newSession.currentLoginTime || new Date().toLocaleString(),
     }));
 
-    // Navigate to origin
-    const from = (location.state as any)?.from?.pathname || '/orders';
-    navigate(from, { replace: true });
+    // Determine default path based on role
+    let defaultPath = '/orders';
+    if (newSession.role === 'Farmvest admin') {
+      defaultPath = '/farmvest/employees';
+    } else if (newSession.role === 'Animalkart admin') {
+      defaultPath = '/orders';
+    }
+
+    // Navigate to origin or default
+    const from = (location.state as any)?.from?.pathname;
+    const targetPath = from && from !== '/login' ? from : defaultPath;
+
+    navigate(targetPath, { replace: true });
   }, [dispatch, location.state, navigate]);
 
   const handleLogout = () => {
@@ -119,7 +130,7 @@ function App() {
     setSession(null);
   };
 
-  const isAdmin = session?.role === 'Admin';
+  const isAdmin = session?.role === 'Admin' || session?.role === 'Animalkart admin' || session?.role === 'Farmvest admin';
 
   const getSortIcon = (key: string, currentSortConfig: any) => {
     if (currentSortConfig.key !== key) return '';
@@ -147,11 +158,21 @@ function App() {
       return (
         <div style={{ maxWidth: 600, margin: '2rem auto', padding: '1.5rem', background: '#fff', borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', textAlign: 'center' }}>
           <h2 style={{ marginBottom: '0.75rem' }}>Access Restricted</h2>
-          <p style={{ marginBottom: 0 }}>Only Admin users can access this dashboard. Please login with an Admin mobile.</p>
+          <p style={{ marginBottom: 0 }}>Only authorized Admin users can access this dashboard. Please login with an Admin mobile.</p>
           <button onClick={handleLogout} style={{ marginTop: '1rem', padding: '8px 16px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Logout</button>
         </div>
       );
     }
+
+    // Role-based route protection
+    const path = location.pathname;
+    if (session.role === 'Farmvest admin' && !path.startsWith('/farmvest') && !['/support', '/privacy-policy'].includes(path)) {
+      return <Navigate to="/farmvest/employees" replace />;
+    }
+    if (session.role === 'Animalkart admin' && path.startsWith('/farmvest')) {
+      return <Navigate to="/orders" replace />;
+    }
+
     return <>{renderWithLayout(children)}</>;
   };
 
@@ -264,6 +285,12 @@ function App() {
           <ConditionalLayoutWrapper>
             <DeactivateUserPage />
           </ConditionalLayoutWrapper>
+        } />
+
+        <Route path="/support-tickets" element={
+          <ProtectedRoute>
+            <SupportTicketsTab />
+          </ProtectedRoute>
         } />
 
         {/* FarmVest Routes */}
