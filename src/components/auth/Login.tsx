@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Smartphone, Lock, CheckCircle, AlertCircle, X, LayoutDashboard, TreePine } from 'lucide-react';
 import { API_CONFIG } from '../../config/api';
+import { farmvestService } from '../../services/farmvest_api';
 
 interface LoginProps {
   onLogin: (session: { mobile: string; role: string | null }) => void;
@@ -37,14 +38,25 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       setError('Please enter a valid mobile number');
       return;
     }
-    setLoading(true);
+
+    // Clear previous states
     setError(null);
     setInfo(null);
+
+    // Farmvest Flow: Skip OTP API call, go directly to OTP entry
+    if (selectedDashboard === 'farmvest') {
+      setStep('enterOtp');
+      setInfo('Please enter the OTP to proceed.');
+      return;
+    }
+
+    // Animalkart Flow: Send OTP via WhatsApp
+    setLoading(true);
     try {
       const baseUrl = API_CONFIG.getBaseUrl();
       const res = await axios.post(`${baseUrl}/otp/send-whatsapp`, {
         mobile,
-        appName: selectedDashboard === 'animalkart' ? 'animalkart_dashboard' : 'farmvest_dashboard',
+        appName: 'animalkart_dashboard', // Always animalkart_dashboard for this flow
       });
 
       if (res.data?.statuscode !== 200) {
@@ -64,26 +76,59 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     }
   };
 
-  const verifyOtp = () => {
+  const verifyOtp = async () => {
     if (!otp || otp.length < 4) {
       setError('Please enter the OTP received on WhatsApp');
       return;
     }
 
-    if (!serverOtp) {
-      setError('No OTP found from server. Please request a new OTP.');
-      return;
+    if (selectedDashboard === 'animalkart') {
+      if (!serverOtp) {
+        setError('No OTP found from server. Please request a new OTP.');
+        return;
+      }
+
+      if (otp !== serverOtp) {
+        setError('Invalid OTP. Please try again.');
+        return;
+      }
+
+      const role = 'Animalkart admin';
+      const session = { mobile, role };
+      window.localStorage.setItem('ak_dashboard_session', JSON.stringify(session));
+
+      handleLoginSuccess(session);
+    } else {
+      // Farmvest Logic
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await farmvestService.staticLogin(mobile, otp);
+
+        // Expecting { access_token, token_type }
+        if (data && data.access_token) {
+          const role = 'Farmvest admin';
+          const session = {
+            mobile,
+            role,
+            access_token: data.access_token,
+            token_type: data.token_type || 'Bearer'
+          };
+          window.localStorage.setItem('ak_dashboard_session', JSON.stringify(session));
+          handleLoginSuccess(session);
+        } else {
+          setError('Login failed: Invalid response from server');
+        }
+      } catch (e: any) {
+        console.error('Farmvest login error:', e);
+        setError(e.response?.data?.message || 'Login failed. Please check your credentials.');
+      } finally {
+        setLoading(false);
+      }
     }
+  };
 
-    if (otp !== serverOtp) {
-      setError('Invalid OTP. Please try again.');
-      return;
-    }
-
-    const role = selectedDashboard === 'animalkart' ? 'Animalkart admin' : 'Farmvest admin';
-    const session = { mobile, role };
-    window.localStorage.setItem('ak_dashboard_session', JSON.stringify(session));
-
+  const handleLoginSuccess = (session: any) => {
     // Show success snackbar
     setShowSnackbar(true);
 
@@ -144,8 +189,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 <button
                   onClick={() => setSelectedDashboard('animalkart')}
                   className={`relative p-5 rounded-2xl border-2 transition-all duration-300 text-left overflow-hidden group ${selectedDashboard === 'animalkart'
-                      ? 'border-blue-600 bg-blue-50/50 ring-4 ring-blue-50'
-                      : 'border-gray-100 bg-gray-50 hover:border-gray-200'
+                    ? 'border-blue-600 bg-blue-50/50 ring-4 ring-blue-50'
+                    : 'border-gray-100 bg-gray-50 hover:border-gray-200'
                     }`}
                 >
                   <div className={`w-12 h-12 rounded-xl mb-4 flex items-center justify-center transition-transform group-hover:scale-110 duration-300 ${selectedDashboard === 'animalkart' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-white text-gray-400 border border-gray-100'
@@ -167,8 +212,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 <button
                   onClick={() => setSelectedDashboard('farmvest')}
                   className={`relative p-5 rounded-2xl border-2 transition-all duration-300 text-left overflow-hidden group ${selectedDashboard === 'farmvest'
-                      ? 'border-indigo-600 bg-indigo-50/50 ring-4 ring-indigo-50'
-                      : 'border-gray-100 bg-gray-50 hover:border-gray-200'
+                    ? 'border-indigo-600 bg-indigo-50/50 ring-4 ring-indigo-50'
+                    : 'border-gray-100 bg-gray-50 hover:border-gray-200'
                     }`}
                 >
                   <div className={`w-12 h-12 rounded-xl mb-4 flex items-center justify-center transition-transform group-hover:scale-110 duration-300 ${selectedDashboard === 'farmvest' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'bg-white text-gray-400 border border-gray-100'

@@ -1,8 +1,9 @@
 import React, { useMemo, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useAppSelector } from '../../store/hooks';
+import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import type { RootState } from '../../store';
 import { useTableSortAndSearch } from '../../hooks/useTableSortAndSearch';
+import { fetchReferralUsers, fetchExistingCustomers } from '../../store/slices/usersSlice';
 import Pagination from '../common/Pagination';
 import TableSkeleton from '../common/TableSkeleton';
 import './UserManagementTab.css';
@@ -12,7 +13,13 @@ interface UserManagementTabProps {
 }
 
 const UserManagementTab: React.FC<UserManagementTabProps> = ({ getSortIcon }) => {
+    const dispatch = useAppDispatch();
     const { existingCustomers, referralUsers, referralLoading, existingLoading } = useAppSelector((state: RootState) => state.users);
+
+    useEffect(() => {
+        dispatch(fetchReferralUsers());
+        dispatch(fetchExistingCustomers());
+    }, [dispatch]);
 
     // URL Search Params for Pagination
     const [searchParams, setSearchParams] = useSearchParams();

@@ -69,6 +69,18 @@ export const deactivateConfirm = createAsyncThunk(
     }
 );
 
+export const fetchAdminProfile = createAsyncThunk(
+    'users/fetchAdminProfile',
+    async (mobile: string, { rejectWithValue }) => {
+        try {
+            const response = await axios.get(API_ENDPOINTS.getUserDetails(mobile));
+            return response.data.user;
+        } catch (error: any) {
+            return rejectWithValue('Failed to fetch admin profile');
+        }
+    }
+);
+
 export interface UsersState {
     referralUsers: any[];
     existingCustomers: any[];
@@ -83,6 +95,7 @@ export interface UsersState {
         success: boolean;
         message: string | null;
     };
+    adminProfile: any | null;
 }
 
 const initialState: UsersState = {
@@ -99,6 +112,7 @@ const initialState: UsersState = {
         success: false,
         message: null,
     },
+    adminProfile: null,
 };
 
 const usersSlice = createSlice({
@@ -198,6 +212,17 @@ const usersSlice = createSlice({
         builder.addCase(deactivateConfirm.rejected, (state, action) => {
             state.deactivation.loading = false;
             state.deactivation.error = action.payload as string;
+        });
+
+        // Fetch Admin Profile
+        builder.addCase(fetchAdminProfile.pending, (state) => {
+            // Option to handle loading state specifically for admin profile if needed
+        });
+        builder.addCase(fetchAdminProfile.fulfilled, (state, action) => {
+            state.adminProfile = action.payload;
+        });
+        builder.addCase(fetchAdminProfile.rejected, (state) => {
+            // Handle error if needed
         });
     }
 });

@@ -19,12 +19,9 @@ import {
 
 
 import {
-  fetchReferralUsers,
-  fetchExistingCustomers,
   createReferralUser,
   setReferralUsers
 } from '../../store/slices/usersSlice';
-import { fetchProducts } from '../../store/slices/productsSlice';
 import { fetchEmployees as fetchFarmvestEmployees } from '../../store/slices/farmvest/employees';
 
 
@@ -136,28 +133,21 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
     return () => window.removeEventListener('resize', handleResize);
   }, [dispatch]);
 
-  useEffect(() => {
-    const fetchAdminDetails = async () => {
-      try {
-        const response = await axios.get(API_ENDPOINTS.getUserDetails(adminMobile!));
-        if (response.data && response.data.user) {
-          const user = response.data.user;
-          let fullName = '';
-          if (user.first_name || user.last_name) {
-            fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
-          } else if (user.name) {
-            fullName = user.name;
-          }
-          if (fullName) setDisplayAdminName(fullName);
-          if (user.referral_code) setAdminReferralCode(user.referral_code);
-        }
-      } catch (error) {
-        console.error('Failed to fetch admin details:', error);
-      }
-    };
+  const { adminProfile } = useAppSelector((state: RootState) => state.users);
 
-    if (adminMobile) fetchAdminDetails();
-  }, [adminMobile]);
+  useEffect(() => {
+    if (adminProfile) {
+      const user = adminProfile;
+      let fullName = '';
+      if (user.first_name || user.last_name) {
+        fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+      } else if (user.name) {
+        fullName = user.name;
+      }
+      if (fullName) setDisplayAdminName(fullName);
+      if (user.referral_code) setAdminReferralCode(user.referral_code);
+    }
+  }, [adminProfile]);
 
   useEffect(() => {
     if (creationRole) {
@@ -168,14 +158,7 @@ const UserTabs: React.FC<UserTabsProps> = ({ adminMobile, adminName, adminRole, 
 
   const hasSession = !!adminMobile;
 
-  useEffect(() => {
-    if (location.pathname === '/user-management' && hasSession && adminMobile) {
-      dispatch(fetchReferralUsers());
-      dispatch(fetchExistingCustomers());
-    } else if (location.pathname === '/products' && hasSession) {
-      dispatch(fetchProducts());
-    }
-  }, [location.pathname, dispatch, adminMobile, hasSession]);
+
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;

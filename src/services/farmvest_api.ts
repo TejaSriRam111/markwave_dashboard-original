@@ -18,15 +18,59 @@ export const FARMVEST_API_CONFIG = {
 const farmvestApi = axios.create({
     baseURL: FARMVEST_API_CONFIG.getBaseUrl(),
     headers: {
-        'Authorization': FARMVEST_API_CONFIG.getApiKey(),
         'Content-Type': 'application/json'
     }
 });
 
+// Add request interceptor to handle dynamic Authorization
+farmvestApi.interceptors.request.use((config) => {
+    // Check for session token
+    const savedSession = localStorage.getItem('ak_dashboard_session');
+    let token = null;
+    let tokenType = 'Bearer';
+
+    if (savedSession) {
+        try {
+            const session = JSON.parse(savedSession);
+            // Check if we have farmvest specific token data
+            if (session.access_token) {
+                token = session.access_token;
+                tokenType = session.token_type || 'Bearer';
+            }
+        } catch (e) {
+            console.error('Error parsing session for token', e);
+        }
+    }
+
+    // If we have a token, use it. Otherwise fall back to the API Key.
+    if (token) {
+        config.headers['Authorization'] = `${tokenType} ${token}`;
+    } else {
+        config.headers['Authorization'] = FARMVEST_API_CONFIG.getApiKey();
+    }
+
+    return config;
+}, (error) => {
+    return Promise.reject(error);
+});
+
 export const farmvestService = {
+    staticLogin: async (mobile_number: string, otp: string) => {
+        try {
+            // This call will usage the API Key via the interceptor (since no token exists yet)
+            const response = await farmvestApi.post('/api/admin/static_login', {
+                mobile_number,
+                otp
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error during farmvest static login:', error);
+            throw error;
+        }
+    },
     getEmployees: async () => {
         try {
-            const response = await farmvestApi.get('/api/employee/get_all_employees');
+            const response = await farmvestApi.get('/api/admin/get_all_employees');
             return response.data;
         } catch (error) {
             console.error('Error fetching farmvest employees:', error);
@@ -35,7 +79,7 @@ export const farmvestService = {
     },
     getFarms: async (location: string) => {
         try {
-            const response = await farmvestApi.get(`/farms/farms?location=${location}`);
+            const response = await farmvestApi.get(`/api/admin/farms?location=${location}`);
             return response.data;
         } catch (error) {
             console.error(`Error fetching farms for ${location}:`, error);
@@ -44,7 +88,7 @@ export const farmvestService = {
     },
     createEmployee: async (employeeData: any) => {
         try {
-            const response = await farmvestApi.post('/api/employee/create_employee', employeeData);
+            const response = await farmvestApi.post('/api/admin/create_employee', employeeData);
             return response.data;
         } catch (error) {
             console.error('Error creating farmvest employee:', error);
@@ -53,7 +97,7 @@ export const farmvestService = {
     },
     deleteEmployee: async (id: number) => {
         try {
-            const response = await farmvestApi.delete(`/api/employee/delete_employee/${id}`);
+            const response = await farmvestApi.delete(`/api/admin/delete_employee/${id}`);
             return response.data;
         } catch (error) {
             console.error(`Error deleting farmvest employee ${id}:`, error);

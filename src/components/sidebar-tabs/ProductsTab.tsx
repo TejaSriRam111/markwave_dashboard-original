@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import type { RootState } from '../../store';
-import { deleteProduct } from '../../store/slices/productsSlice';
+import { deleteProduct, fetchProducts } from '../../store/slices/productsSlice';
 import ProductImageCarousel from '../products/ProductImageCarousel';
 import ProductCardSkeleton from '../common/ProductCardSkeleton';
 import ProductFormModal from '../modals/ProductFormModal';
@@ -16,6 +16,10 @@ interface ProductsTabProps { }
 const ProductsTab: React.FC<ProductsTabProps> = () => {
     const dispatch = useAppDispatch();
     const { products, loading: productsLoading } = useAppSelector((state: RootState) => state.products);
+
+    React.useEffect(() => {
+        dispatch(fetchProducts());
+    }, [dispatch]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<any>(null);
     const [activeMenuId, setActiveMenuId] = useState<string | null>(null);

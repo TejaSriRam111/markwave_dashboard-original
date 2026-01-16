@@ -1,6 +1,8 @@
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
-import { useAppDispatch } from './store/hooks';
+import { useAppDispatch, useAppSelector } from './store/hooks';
 import { setSession as setReduxSession } from './store/slices/authSlice';
+import { fetchAdminProfile } from './store/slices/usersSlice';
+import { RootState } from './store';
 import React, { useState, useCallback, useEffect } from 'react';
 import HealthStatus from './components/HealthStatus';
 import UserTabs from './components/UserTabs/UserTabs';
@@ -65,6 +67,7 @@ function App() {
     return null;
   });
   const dispatch = useAppDispatch();
+  const { adminProfile } = useAppSelector((state: RootState) => state.users);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -77,8 +80,13 @@ function App() {
         lastLogin: session.lastLoginTime || 'First Login',
         presentLogin: session.currentLoginTime || new Date().toLocaleString(),
       }));
+
+      // Fetch admin profile if not already loaded to prevent repeated API calls
+      if (!adminProfile) {
+        dispatch(fetchAdminProfile(session.mobile));
+      }
     }
-  }, [dispatch, session]);
+  }, [dispatch, session, adminProfile]);
 
   const handleLogin = useCallback((s: Session) => {
     // Determine last login (from previous session or current if new)
@@ -137,66 +145,6 @@ function App() {
     return currentSortConfig.direction === 'asc' ? '↑' : '↓';
   };
 
-  const renderWithLayout = (component: React.ReactNode) => (
-    <UserTabs
-      adminMobile={session?.mobile || undefined}
-      adminName={session?.name}
-      adminRole={session?.role || undefined}
-      lastLogin={session?.lastLoginTime}
-      presentLogin={session?.currentLoginTime}
-      onLogout={handleLogout}
-    >
-      {component}
-    </UserTabs>
-  );
-
-  const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-    if (!session) {
-      return <Navigate to="/login" replace state={{ from: location }} />;
-    }
-    if (!isAdmin) {
-      return (
-        <div style={{ maxWidth: 600, margin: '2rem auto', padding: '1.5rem', background: '#fff', borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', textAlign: 'center' }}>
-          <h2 style={{ marginBottom: '0.75rem' }}>Access Restricted</h2>
-          <p style={{ marginBottom: 0 }}>Only authorized Admin users can access this dashboard. Please login with an Admin mobile.</p>
-          <button onClick={handleLogout} style={{ marginTop: '1rem', padding: '8px 16px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Logout</button>
-        </div>
-      );
-    }
-
-    // Role-based route protection
-    const path = location.pathname;
-    if (session.role === 'Farmvest admin' && !path.startsWith('/farmvest') && !['/support', '/privacy-policy'].includes(path)) {
-      return <Navigate to="/farmvest/employees" replace />;
-    }
-    if (session.role === 'Animalkart admin' && path.startsWith('/farmvest')) {
-      return <Navigate to="/orders" replace />;
-    }
-
-    return <>{renderWithLayout(children)}</>;
-  };
-
-  const ConditionalLayoutWrapper = ({ children }: { children: React.ReactNode }) => {
-    const shouldShowLayout = location.state?.fromDashboard && session;
-
-    if (shouldShowLayout) {
-      return (
-        <UserTabs
-          adminMobile={session?.mobile || undefined}
-          adminName={session?.name}
-          adminRole={session?.role || undefined}
-          lastLogin={session?.lastLoginTime}
-          presentLogin={session?.currentLoginTime}
-          onLogout={handleLogout}
-        >
-          {children}
-        </UserTabs>
-      );
-    }
-
-    return <>{children}</>;
-  };
-
   return (
     <div className="App">
       <Routes>
@@ -206,7 +154,7 @@ function App() {
 
         {/* Protected Dashboard Routes */}
         <Route path="/orders" element={
-          <ProtectedRoute>
+          <ProtectedRoute session={session} isAdmin={isAdmin} handleLogout={handleLogout}>
             <React.Suspense fallback={<OrdersPageSkeleton />}>
               <OrdersTab
                 handleApproveClick={async (id: string) => {
@@ -227,7 +175,7 @@ function App() {
         } />
 
         <Route path="/user-management" element={
-          <ProtectedRoute>
+          <ProtectedRoute session={session} isAdmin={isAdmin} handleLogout={handleLogout}>
             <React.Suspense fallback={<UsersPageSkeleton />}>
               <UserManagementTab getSortIcon={getSortIcon} />
             </React.Suspense>
@@ -235,7 +183,7 @@ function App() {
         } />
 
         <Route path="/products" element={
-          <ProtectedRoute>
+          <ProtectedRoute session={session} isAdmin={isAdmin} handleLogout={handleLogout}>
             <React.Suspense fallback={<ProductsPageSkeleton />}>
               <ProductsTab />
             </React.Suspense>
@@ -244,7 +192,7 @@ function App() {
 
         {/* Publically Accessible Visualization Routes */}
         <Route path="/buffalo-viz" element={
-          <ConditionalLayoutWrapper>
+          <ConditionalLayoutWrapper session={session} handleLogout={handleLogout}>
             <React.Suspense fallback={<BuffaloVizSkeleton />}>
               <BuffaloVisualizationTab />
             </React.Suspense>
@@ -252,7 +200,7 @@ function App() {
         } />
 
         <Route path="/unit-calculator" element={
-          <ConditionalLayoutWrapper>
+          <ConditionalLayoutWrapper session={session} handleLogout={handleLogout}>
             <React.Suspense fallback={<BuffaloVizSkeleton />}>
               <UnitCalculatorTab />
             </React.Suspense>
@@ -260,7 +208,7 @@ function App() {
         } />
 
         <Route path="/emi-calculator" element={
-          <ConditionalLayoutWrapper>
+          <ConditionalLayoutWrapper session={session} handleLogout={handleLogout}>
             <React.Suspense fallback={<EmiCalculatorSkeleton />}>
               <EmiCalculatorTab />
             </React.Suspense>
@@ -268,7 +216,7 @@ function App() {
         } />
 
         <Route path="/acf-calculator" element={
-          <ConditionalLayoutWrapper>
+          <ConditionalLayoutWrapper session={session} handleLogout={handleLogout}>
             <React.Suspense fallback={<EmiCalculatorSkeleton />}>
               <AcfCalculatorTab />
             </React.Suspense>
@@ -276,26 +224,26 @@ function App() {
         } />
 
         <Route path="/referral-landing" element={
-          <ConditionalLayoutWrapper>
+          <ConditionalLayoutWrapper session={session} handleLogout={handleLogout}>
             <ReferralLandingPage />
           </ConditionalLayoutWrapper>
         } />
 
         <Route path="/deactivate-user" element={
-          <ConditionalLayoutWrapper>
+          <ConditionalLayoutWrapper session={session} handleLogout={handleLogout}>
             <DeactivateUserPage />
           </ConditionalLayoutWrapper>
         } />
 
         <Route path="/support-tickets" element={
-          <ProtectedRoute>
+          <ProtectedRoute session={session} isAdmin={isAdmin} handleLogout={handleLogout}>
             <SupportTicketsTab />
           </ProtectedRoute>
         } />
 
         {/* FarmVest Routes */}
         <Route path="/farmvest/employees" element={
-          <ProtectedRoute>
+          <ProtectedRoute session={session} isAdmin={isAdmin} handleLogout={handleLogout}>
             <React.Suspense fallback={<UsersPageSkeleton />}>
               <FarmVestEmployees />
             </React.Suspense>
@@ -303,7 +251,7 @@ function App() {
         } />
 
         <Route path="/farmvest/farms" element={
-          <ProtectedRoute>
+          <ProtectedRoute session={session} isAdmin={isAdmin} handleLogout={handleLogout}>
             <React.Suspense fallback={<OrdersPageSkeleton />}>
               <FarmVestFarms />
             </React.Suspense>
@@ -321,14 +269,14 @@ function App() {
 
         {/* Privacy Policy - Standalone, no UserTabs, accessible publicly if needed */}
         <Route path="/privacy-policy" element={
-          <ConditionalLayoutWrapper>
+          <ConditionalLayoutWrapper session={session} handleLogout={handleLogout}>
             <PrivacyPolicy />
           </ConditionalLayoutWrapper>
         } />
 
         {/* Support Page - Context Aware */}
         <Route path="/support" element={
-          <ConditionalLayoutWrapper>
+          <ConditionalLayoutWrapper session={session} handleLogout={handleLogout}>
             <Support />
           </ConditionalLayoutWrapper>
         } />
@@ -340,5 +288,66 @@ function App() {
     </div>
   );
 }
+
+const ProtectedRoute = ({ children, session, isAdmin, handleLogout }: { children: React.ReactNode, session: Session | null, isAdmin: boolean, handleLogout: () => void }) => {
+  const location = useLocation();
+
+  if (!session) {
+    return <Navigate to="/login" replace state={{ from: location }} />;
+  }
+  if (!isAdmin) {
+    return (
+      <div style={{ maxWidth: 600, margin: '2rem auto', padding: '1.5rem', background: '#fff', borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', textAlign: 'center' }}>
+        <h2 style={{ marginBottom: '0.75rem' }}>Access Restricted</h2>
+        <p style={{ marginBottom: 0 }}>Only authorized Admin users can access this dashboard. Please login with an Admin mobile.</p>
+        <button onClick={handleLogout} style={{ marginTop: '1rem', padding: '8px 16px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Logout</button>
+      </div>
+    );
+  }
+
+  // Role-based route protection
+  const path = location.pathname;
+  if (session.role === 'Farmvest admin' && !path.startsWith('/farmvest') && !['/support', '/support-tickets', '/privacy-policy'].includes(path)) {
+    return <Navigate to="/farmvest/employees" replace />;
+  }
+  if (session.role === 'Animalkart admin' && path.startsWith('/farmvest')) {
+    return <Navigate to="/orders" replace />;
+  }
+
+  return (
+    <UserTabs
+      adminMobile={session.mobile}
+      adminName={session.name}
+      adminRole={session.role || undefined}
+      lastLogin={session.lastLoginTime}
+      presentLogin={session.currentLoginTime}
+      onLogout={handleLogout}
+    >
+      {children}
+    </UserTabs>
+  );
+};
+
+const ConditionalLayoutWrapper = ({ children, session, handleLogout }: { children: React.ReactNode, session: Session | null, handleLogout: () => void }) => {
+  const location = useLocation();
+  const shouldShowLayout = location.state?.fromDashboard && session;
+
+  if (shouldShowLayout) {
+    return (
+      <UserTabs
+        adminMobile={session?.mobile}
+        adminName={session?.name}
+        adminRole={session?.role || undefined}
+        lastLogin={session?.lastLoginTime}
+        presentLogin={session?.currentLoginTime}
+        onLogout={handleLogout}
+      >
+        {children}
+      </UserTabs>
+    );
+  }
+
+  return <>{children}</>;
+};
 
 export default App;
