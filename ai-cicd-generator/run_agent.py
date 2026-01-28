@@ -25,4 +25,4 @@ run("git add .github/workflows/ci.yml", cwd=REPO_ROOT)
 run('git commit -m "AI: Generate CI pipeline for MarkWave Dashboard"', cwd=REPO_ROOT)
 run("git push", cwd=REPO_ROOT)
 
-print("✅ AI CI/CD pipeline generated and pushed successfully")
+print(" AI CI/CD pipeline generated and pushed successfully")
